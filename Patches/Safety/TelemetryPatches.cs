@@ -22,7 +22,6 @@
 using HarmonyLib;
 using JetBrains.Annotations;
 using Liv.Lck.Telemetry;
-using PlayFab.EventsModels;
 
 namespace iiMenu.Patches.Safety
 {
@@ -38,19 +37,12 @@ namespace iiMenu.Patches.Safety
                 !enabled;
         }
 
-        [HarmonyPatch(typeof(GorillaTelemetry), nameof(GorillaTelemetry.EnqueueTelemetryEventPlayFab))]
-        public class TelemetryPatch2
-        {
-            private static bool Prefix(EventContents eventContent) =>
-                !enabled;
-        }
-
-        [HarmonyPatch(typeof(GorillaTelemetry), nameof(GorillaTelemetry.FlushPlayFabTelemetry))]
-        public class TelemetryPatch3
-        {
-            private static bool Prefix() =>
-                !enabled;
-        }
+        // TelemetryPatch2 (EnqueueTelemetryEventPlayFab) and TelemetryPatch3
+        // (FlushPlayFabTelemetry) were removed for the 2026-08-07 game build.
+        // Gorilla Tag dropped the PlayFab telemetry path from GorillaTelemetry
+        // entirely -- only EnqueueTelemetryEvent and FlushMothershipTelemetry
+        // remain, and nothing in the game calls PlayFabEventsAPI.WriteTelemetryEvents.
+        // There is no longer anything to suppress here.
 
         [HarmonyPatch(typeof(GorillaTelemetry), nameof(GorillaTelemetry.FlushMothershipTelemetry))]
         public class TelemetryPatch4

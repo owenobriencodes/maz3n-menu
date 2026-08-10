@@ -2768,7 +2768,7 @@ namespace iiMenu.Mods
         {
             bool isTagged = VRRig.LocalRig.IsTagged();
 
-            VRRig closestRig = GorillaParent.instance.vrrigs
+            VRRig closestRig = VRRigCache.AllRigs
                 .Where(rig => rig != null && !rig.isLocal && 
                                   (isTagged ? !rig.IsTagged() : rig.IsTagged()))
                 .OrderBy(rig => Vector3.Distance(rig.transform.position, GorillaTagger.Instance.bodyCollider.transform.position))
@@ -3536,7 +3536,7 @@ namespace iiMenu.Mods
 
         public static void EyeContact()
         {
-            foreach (VRRig rig in GorillaParent.instance.vrrigs.Where(rig => !rig.IsLocal()))
+            foreach (VRRig rig in VRRigCache.AllRigs.Where(rig => !rig.IsLocal()))
             {
                 if (Physics.SphereCast(rig.headMesh.transform.position + (rig.headMesh.transform.forward * 0.25f), 0.25f, rig.headMesh.transform.forward, out _, 512f, NoInvisLayerMask()))
                 {
@@ -3733,7 +3733,7 @@ namespace iiMenu.Mods
         public static void PunchMod()
         {
             int index = -1;
-            foreach (var vrrig in GorillaParent.instance.vrrigs.Where(vrrig => !vrrig.isLocal))
+            foreach (var vrrig in VRRigCache.AllRigs.Where(vrrig => !vrrig.isLocal))
             {
                 index++;
 
@@ -3763,7 +3763,7 @@ namespace iiMenu.Mods
         {
             if (sithlord == null)
             {
-                foreach (VRRig vrrig in GorillaParent.instance.vrrigs)
+                foreach (VRRig vrrig in VRRigCache.AllRigs)
                 {
                     try
                     {
@@ -3817,7 +3817,7 @@ namespace iiMenu.Mods
         public static void SafetyBubble()
         {
             foreach (VRRig rig in 
-                GorillaParent.instance.vrrigs
+                VRRigCache.AllRigs
                     .Where(rig => rig != null && !rig.isLocal)
                     .OrderBy(rig => Vector3.Distance(rig.transform.position, GorillaTagger.Instance.bodyCollider.transform.position)))
             {
@@ -3837,7 +3837,7 @@ namespace iiMenu.Mods
             List<VRRig> toRemove = new List<VRRig>();
             foreach (VRRig rig in RigColliders.Keys)
             {
-                if (!GorillaParent.instance.vrrigs.Contains(rig))
+                if (!VRRigCache.AllRigs.Contains(rig))
                     toRemove.Add(rig);
             }
 
@@ -3849,7 +3849,7 @@ namespace iiMenu.Mods
 
             toRemove.Clear();
 
-            foreach (var vrrig in GorillaParent.instance.vrrigs.Where(vrrig => !vrrig.isLocal))
+            foreach (var vrrig in VRRigCache.AllRigs.Where(vrrig => !vrrig.isLocal))
             {
                 if (!RigColliders.TryGetValue(vrrig, out List<GameObject> colliders))
                 {
@@ -4277,7 +4277,7 @@ namespace iiMenu.Mods
         {
             bool isTagged = VRRig.LocalRig.IsTagged();
 
-            VRRig closestRig = GorillaParent.instance.vrrigs
+            VRRig closestRig = VRRigCache.AllRigs
                 .Where(rig => rig != null && !rig.isLocal &&
                                   (isTagged ? !rig.IsTagged() : rig.IsTagged()))
                 .OrderBy(rig => Vector3.Distance(rig.transform.position, GorillaTagger.Instance.bodyCollider.transform.position))
@@ -4479,7 +4479,7 @@ namespace iiMenu.Mods
         }
 
         public static void SetSwimSpeed(float speed = 3f) =>
-            GTPlayer.Instance.swimmingParams.swimmingVelocityOutOfWaterDrainRate = speed;
+            GTPlayer.Instance.GetSwimmingParams(GTPlayer.LiquidType.Water).swimmingVelocityOutOfWaterDrainRate = speed;
 
         private static float? waterSurfaceJumpAmount;
         private static float? waterSurfaceJumpMaxSpeed;
@@ -4487,16 +4487,16 @@ namespace iiMenu.Mods
         {
             if (enable)
             {
-                waterSurfaceJumpAmount = GTPlayer.Instance.swimmingParams.waterSurfaceJumpAmount;
-                waterSurfaceJumpMaxSpeed = GTPlayer.Instance.swimmingParams.waterSurfaceJumpMaxSpeed;
+                waterSurfaceJumpAmount = GTPlayer.Instance.GetSwimmingParams(GTPlayer.LiquidType.Water).waterSurfaceJumpAmount;
+                waterSurfaceJumpMaxSpeed = GTPlayer.Instance.GetSwimmingParams(GTPlayer.LiquidType.Water).waterSurfaceJumpMaxSpeed;
 
-                GTPlayer.Instance.swimmingParams.waterSurfaceJumpAmount = 1.25f;
-                GTPlayer.Instance.swimmingParams.waterSurfaceJumpMaxSpeed = 4.333f;
+                GTPlayer.Instance.GetSwimmingParams(GTPlayer.LiquidType.Water).waterSurfaceJumpAmount = 1.25f;
+                GTPlayer.Instance.GetSwimmingParams(GTPlayer.LiquidType.Water).waterSurfaceJumpMaxSpeed = 4.333f;
             }
             else
             {
-                GTPlayer.Instance.swimmingParams.waterSurfaceJumpAmount = waterSurfaceJumpAmount ?? 0.6f;
-                GTPlayer.Instance.swimmingParams.waterSurfaceJumpMaxSpeed = waterSurfaceJumpMaxSpeed ?? 1f;
+                GTPlayer.Instance.GetSwimmingParams(GTPlayer.LiquidType.Water).waterSurfaceJumpAmount = waterSurfaceJumpAmount ?? 0.6f;
+                GTPlayer.Instance.GetSwimmingParams(GTPlayer.LiquidType.Water).waterSurfaceJumpMaxSpeed = waterSurfaceJumpMaxSpeed ?? 1f;
             }
         }
 

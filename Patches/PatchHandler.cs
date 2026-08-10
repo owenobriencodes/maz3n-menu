@@ -37,11 +37,31 @@ namespace iiMenu.Patches
             if (IsPatched) return;
             instance ??= new Harmony(PluginInfo.GUID);
 
-            foreach (var type in Assembly.GetExecutingAssembly().GetTypes()
-                         .Where(t => t.IsClass && t.GetCustomAttribute<HarmonyPatch>() != null))
+            // Enumerating types can itself fail once the game drifts; keep whatever
+            // loaded rather than losing the whole menu.
+            Type[] types;
+            try
+            {
+                types = Assembly.GetExecutingAssembly().GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                types = ex.Types.Where(t => t != null).ToArray();
+                LogManager.LogError($"Some types failed to load: {ex}");
+            }
+
+            // The HarmonyPatch attribute probe must stay *inside* the try. Reading the
+            // attribute forces resolution of its typeof(...) target, so a game type that
+            // was renamed or removed throws here -- and if that throw escapes the loop,
+            // PatchAll() dies before the menu UI is ever created and the menu vanishes
+            // with no in-game indication. Guarded, a missing type costs one patch.
+            foreach (var type in types)
             {
                 try
                 {
+                    if (!type.IsClass || type.GetCustomAttribute<HarmonyPatch>() == null)
+                        continue;
+
                     instance.CreateClassProcessor(type).Patch();
                 }
                 catch (Exception ex)

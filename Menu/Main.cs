@@ -4248,9 +4248,9 @@ namespace iiMenu.Menu
 
             try
             {
-                GorillaNot.instance.rpcErrorMax = int.MaxValue;
-                GorillaNot.instance.rpcCallLimit = int.MaxValue;
-                GorillaNot.instance.logErrorMax = int.MaxValue;
+                MonkeAgent.instance.rpcErrorMax = int.MaxValue;
+                MonkeAgent.instance.rpcCallLimit = int.MaxValue;
+                MonkeAgent.instance.logErrorMax = int.MaxValue;
 
                 PhotonNetwork.MaxResendsBeforeDisconnect = int.MaxValue;
                 PhotonNetwork.QuickResends = int.MaxValue;
@@ -4603,7 +4603,7 @@ namespace iiMenu.Menu
         {
             get
             {
-                if (!GorillaParent.instance.vrrigs.Contains(_giveGunTarget))
+                if (!VRRigCache.AllRigs.Contains(_giveGunTarget))
                     _giveGunTarget = null;
 
                 return _giveGunTarget;
@@ -5024,7 +5024,7 @@ namespace iiMenu.Menu
         {
             if (snowballDict == null)
             {
-                if (!CosmeticsV2Spawner_Dirty.allPartsInstantiated)
+                if (!CosmeticsV2Spawner_Dirty.isPrepared)
                     return null;
 
                 snowballDict = new Dictionary<string, SnowballThrowable>();
@@ -5805,7 +5805,7 @@ namespace iiMenu.Menu
             {
                 if (!GorillaComputer.instance.friendJoinCollider.playerIDsCurrentlyTouching.Contains(PhotonNetwork
                         .LocalPlayer.UserId) &&
-                    !CosmeticWardrobeProximityDetector.IsUserNearWardrobe(PhotonNetwork.LocalPlayer.UserId)) return;
+                    !CosmeticWardrobeProximityDetector.IsUserNearWardrobe(PhotonNetwork.LocalPlayer.ActorNumber)) return;
                 GorillaTagger.Instance.myVRRig.SendRPC("RPC_InitializeNoobMaterial", RpcTarget.All, VRRig.LocalRig.playerColor.r, VRRig.LocalRig.playerColor.g, VRRig.LocalRig.playerColor.b);
                 RPCProtection();
             }

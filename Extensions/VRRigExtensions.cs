@@ -52,9 +52,31 @@ namespace iiMenu.Extensions
         public static bool IsKIDRestricted(this VRRig rig) =>
             !rig.IsMicEnabled && rig.GetName().ToLower().StartsWith("gorilla");
 
+        /// <summary>
+        /// Replacement for the removed VRRig.rawCosmeticString field, dropped in the
+        /// 2026-08-07 build. Rebuilds the concatenated cosmetic string from the rig's
+        /// networked CosmeticSet so existing Contains(...) checks keep working.
+        /// NOTE: the old field held the cosmetics a player was *allowed* to wear; this
+        /// reads the set they are *currently wearing*. Equivalent for every use in this
+        /// tree except moderator detection, which should be verified in-game.
+        /// </summary>
+        public static string RawCosmeticString(this VRRig rig)
+        {
+            if (rig == null)
+                return string.Empty;
+
+            var set = rig.cosmeticSet;
+            if (set.items == null)
+                return string.Empty;
+
+            return string.Join(".", set.items
+                .Where(item => !item.isNullItem)
+                .Select(item => item.itemName));
+        }
+
         public static string GetPlatform(this VRRig rig)
         {
-            string concatStringOfCosmeticsAllowed = rig.rawCosmeticString;
+            string concatStringOfCosmeticsAllowed = rig.RawCosmeticString();
 
             if (concatStringOfCosmeticsAllowed.Contains("S. FIRST LOGIN"))
                 return "Steam";
@@ -93,7 +115,7 @@ namespace iiMenu.Extensions
         }
 
         public static bool Active(this VRRig rig) =>
-            rig != null && GorillaParent.instance.vrrigs.Contains(rig);
+            rig != null && VRRigCache.AllRigs.Contains(rig);
 
         public static float Distance(this VRRig rig, Vector3 position) =>
             Vector3.Distance(rig.transform.position, position);
@@ -105,7 +127,7 @@ namespace iiMenu.Extensions
             rig.Distance(GorillaTagger.Instance.bodyCollider.transform.position);
 
         public static VRRig GetClosest(this VRRig rig) =>
-            GorillaParent.instance.vrrigs.Where(targetRig => targetRig != null && targetRig != rig)
+            VRRigCache.AllRigs.Where(targetRig => targetRig != null && targetRig != rig)
                                          .OrderBy(rig.Distance)
                                          .FirstOrDefault();
 

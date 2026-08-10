@@ -699,11 +699,12 @@ exit";
             if (!XRSettings.isDeviceActive)
                 return;
 
-            ConnectedControllerHandler.Instance.leftControllerValid = true;
-            ConnectedControllerHandler.Instance.rightControllerValid = true;
-
-            ConnectedControllerHandler.Instance.leftValid = true;
-            ConnectedControllerHandler.Instance.rightValid = true;
+            // The 2026-08-07 build made leftValid/rightValid computed read-only
+            // properties and dropped leftControllerValid/rightControllerValid.
+            // Forcing hands on now goes through the controller override flags.
+            ConnectedControllerHandler.Instance.overrideEnabled = true;
+            ConnectedControllerHandler.Instance.overrideLeftEnable = true;
+            ConnectedControllerHandler.Instance.overrideRightEnable = true;
         }
 
         private static bool reportMenuToggle;
@@ -734,7 +735,9 @@ exit";
             {
                 HandRayController.DisableHandRays();
 
-                PrivateUIRoom.overlayForcedActive = false;
+                // overlayForcedActive became a read-only computed property backed by
+                // overlayForcedSources; clear the forced sources to the same effect.
+                PrivateUIRoom.StopForcedOverlay(PrivateUIRoom.overlayForcedSources);
                 PrivateUIRoom.StopOverlay();
 
                 if (!TOSPatches.enabled)
@@ -828,7 +831,7 @@ exit";
         public static void BlockOnMute()
         {
             bool selfTagged = VRRig.LocalRig.IsTagged();
-            foreach (VRRig rig in GorillaParent.instance.vrrigs.Where(rig => !rig.IsLocal() && rig.muted))
+            foreach (VRRig rig in VRRigCache.AllRigs.Where(rig => !rig.IsLocal() && rig.muted))
             {
                 if (GameModeUtilities.InfectedList().Count <= 0 || (selfTagged ? !rig.IsTagged() : rig.IsTagged()))
                     rig.transform.position = rig.syncPos - (Vector3.up * 99999f);
@@ -837,7 +840,7 @@ exit";
 
         public static void DisablePitchScaling()
         {
-            foreach (var vrrig in GorillaParent.instance.vrrigs.Where(vrrig => !vrrig.isLocal))
+            foreach (var vrrig in VRRigCache.AllRigs.Where(vrrig => !vrrig.isLocal))
             {
                 vrrig.voicePitchForRelativeScale = new AnimationCurve(
                     new Keyframe(0f, 1f, 0f, 0f),
@@ -848,7 +851,7 @@ exit";
 
         public static void EnablePitchScaling()
         {
-            foreach (var vrrig in GorillaParent.instance.vrrigs.Where(vrrig => !vrrig.isLocal))
+            foreach (var vrrig in VRRigCache.AllRigs.Where(vrrig => !vrrig.isLocal))
                 vrrig.voicePitchForRelativeScale = VRRig.LocalRig.voicePitchForRelativeScale;
         }
 
@@ -991,10 +994,10 @@ exit";
         private static bool lastSteam;
         public static void SteamDetector()
         {
-            bool playerOnSteam = GorillaParent.instance.vrrigs.Any(vrrig => !vrrig.IsLocal() && vrrig.IsSteam());
+            bool playerOnSteam = VRRigCache.AllRigs.Any(vrrig => !vrrig.IsLocal() && vrrig.IsSteam());
             if (playerOnSteam && !lastSteam)
             {
-                VRRig vrrig = GorillaParent.instance.vrrigs.First(vrrig => !vrrig.IsLocal() && vrrig.IsSteam());
+                VRRig vrrig = VRRigCache.AllRigs.First(vrrig => !vrrig.IsLocal() && vrrig.IsSteam());
                 NotificationManager.SendNotification($"<color=grey>[</color><color=red>STEAM</color><color=grey>]</color> {vrrig.GetName()} is on Steam.");
 
                 Play2DAudio(LoadSoundFromURL($"{PluginInfo.ServerResourcePath}/Audio/Mods/Safety/steam.ogg", "Audio/Mods/Safety/steam.ogg"), buttonClickVolume / 10f);

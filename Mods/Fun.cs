@@ -430,7 +430,7 @@ namespace iiMenu.Mods
         {
             bool isBoopLeft = false;
             bool isBoopRight = false;
-            foreach (VRRig vrrig in GorillaParent.instance.vrrigs)
+            foreach (VRRig vrrig in VRRigCache.AllRigs)
             {
                 if (!vrrig.isLocal)
                 {
@@ -1359,7 +1359,9 @@ namespace iiMenu.Mods
             if (rightTrigger > 0.5f && Time.time > lastTimeDingied)
             {
                 lastTimeDingied = Time.time + VRRig.LocalRig.fxSettings.GetDelay(10);
-                GetAllType<MonkeBusinessStation>().FirstOrDefault().photonView.RPC("BroadcastRedeemQuestPoints", RpcTarget.All, 50);
+                // MonkeBusinessStation no longer caches a PhotonView field as of the
+                // 2026-08-07 build; resolve it off the component instead.
+                GetAllType<MonkeBusinessStation>().FirstOrDefault()?.GetComponent<PhotonView>()?.RPC("BroadcastRedeemQuestPoints", RpcTarget.All, 50);
             }
         }
 
@@ -2352,7 +2354,7 @@ namespace iiMenu.Mods
 
                 if (GetGunInput(true))
                 {
-                    LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraCococamInstance;
+                    LckSocialCamera camera = LckSocialCameraManager.Instance._networkedCococam;
                     camera.visible = true;
                     camera.recording = true;
 
@@ -2373,7 +2375,7 @@ namespace iiMenu.Mods
 
                 if (GetGunInput(true))
                 {
-                    LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraTabletInstance;
+                    LckSocialCamera camera = LckSocialCameraManager.Instance._networkedTablet;
                     camera.visible = true;
                     camera.recording = true;
 
@@ -2659,7 +2661,7 @@ Piece Name: {gunTarget.name}";
                 SlingshotProjectile projectileInstance = projectileArray[index].projectileInstance;
                 if (projectileInstance == null || !projectileInstance.gameObject.activeSelf) continue;
 
-                foreach (var rig in GorillaParent.instance.vrrigs.Where(rig => !rig.IsLocal()).Where(rig => rig.Distance(projectileInstance.transform.position) < 0.5f))
+                foreach (var rig in VRRigCache.AllRigs.Where(rig => !rig.IsLocal()).Where(rig => rig.Distance(projectileInstance.transform.position) < 0.5f))
                     projectileInstance.transform.position = rig.headMesh.transform.position;
             }
         }
@@ -3088,7 +3090,7 @@ Piece Name: {gunTarget.name}";
                 return;
 
             List<NetPlayer> infected = InfectedList();
-            List<VRRig> rigs = GorillaParent.instance.vrrigs
+            List<VRRig> rigs = VRRigCache.AllRigs
                 .Where(rig => !rig.isLocal)
                 .Where(rig => !infected.Contains(GetPlayerFromVRRig(rig)))
                 .ToList();
@@ -3388,7 +3390,7 @@ Piece Name: {gunTarget.name}";
                 cameraSpamDelay = Time.time + 0.25f;
                 cameraSpamType = !cameraSpamType;
 
-                LckSocialCamera camera = cameraSpamType ? LckSocialCameraManager.Instance._socialCameraCococamInstance : LckSocialCameraManager.Instance._socialCameraTabletInstance;
+                LckSocialCamera camera = cameraSpamType ? LckSocialCameraManager.Instance._networkedCococam : LckSocialCameraManager.Instance._networkedTablet;
 
                 GameObject cameraSpamObject = new GameObject("iiMenu_CameraSpamObject");
                 cameraSpamObject.transform.localScale = Vector3.one * 0.2f;
@@ -3539,7 +3541,7 @@ Piece Name: {gunTarget.name}";
                             if (!PhotonNetwork.InRoom)
                                 break;
 
-                            LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraCococamInstance;
+                            LckSocialCamera camera = LckSocialCameraManager.Instance._networkedCococam;
 
                             GameObject cameraSpamObject = new GameObject("iiMenu_CameraSpamObject");
                             cameraSpamObject.transform.localScale = Vector3.one * 0.2f;
@@ -3583,7 +3585,7 @@ Piece Name: {gunTarget.name}";
                             if (!PhotonNetwork.InRoom)
                                 break;
 
-                            LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraTabletInstance;
+                            LckSocialCamera camera = LckSocialCameraManager.Instance._networkedTablet;
 
                             GameObject cameraSpamObject = new GameObject("iiMenu_CameraSpamObject");
                             cameraSpamObject.transform.localScale = Vector3.one * 0.2f;
@@ -3638,7 +3640,7 @@ Piece Name: {gunTarget.name}";
 
         public static void DisableCameraSpam()
         {
-            LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraCococamInstance;
+            LckSocialCamera camera = LckSocialCameraManager.Instance._networkedCococam;
 
             if (camera.GetComponent<ClampPosition>() != null)
                 Object.Destroy(camera.GetComponent<ClampPosition>());
@@ -3914,7 +3916,7 @@ Piece Name: {gunTarget.name}";
 
         public static void PhysicalCamera()
         {
-            LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraCococamInstance;
+            LckSocialCamera camera = LckSocialCameraManager.Instance._networkedCococam;
 
             if (!camera.visible)
             {
@@ -4001,7 +4003,7 @@ Piece Name: {gunTarget.name}";
         {
             if (rightGrab)
             {
-                LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraCococamInstance;
+                LckSocialCamera camera = LckSocialCameraManager.Instance._networkedCococam;
                 camera.visible = true;
                 camera.recording = true;
 
@@ -4017,7 +4019,7 @@ Piece Name: {gunTarget.name}";
         {
             if (rightGrab)
             {
-                LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraTabletInstance;
+                LckSocialCamera camera = LckSocialCameraManager.Instance._networkedTablet;
                 camera.visible = true;
                 camera.recording = true;
 
@@ -4073,7 +4075,7 @@ Piece Name: {gunTarget.name}";
 
         public static void DestroyCamera()
         {
-            LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraCococamInstance;
+            LckSocialCamera camera = LckSocialCameraManager.Instance._networkedCococam;
             camera.visible = false;
             camera.recording = false;
 
@@ -4083,7 +4085,7 @@ Piece Name: {gunTarget.name}";
 
         public static void DestroyTablet()
         {
-            LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraTabletInstance;
+            LckSocialCamera camera = LckSocialCameraManager.Instance._networkedTablet;
             camera.visible = false;
             camera.recording = false;
 
@@ -5032,7 +5034,7 @@ Piece Name: {gunTarget.name}";
 
         public static void SpazCamera()
         {
-            LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraCococamInstance;
+            LckSocialCamera camera = LckSocialCameraManager.Instance._networkedCococam;
             camera.visible = true;
             camera.recording = true;
 
@@ -5044,7 +5046,7 @@ Piece Name: {gunTarget.name}";
 
         public static void SpazTablet()
         {
-            LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraTabletInstance;
+            LckSocialCamera camera = LckSocialCameraManager.Instance._networkedTablet;
             camera.visible = true;
             camera.recording = true;
 
@@ -5080,7 +5082,7 @@ Piece Name: {gunTarget.name}";
 
         public static void OrbitCamera()
         {
-            LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraCococamInstance;
+            LckSocialCamera camera = LckSocialCameraManager.Instance._networkedCococam;
             camera.visible = true;
             camera.recording = true;
 
@@ -5092,7 +5094,7 @@ Piece Name: {gunTarget.name}";
 
         public static void OrbitTablet()
         {
-            LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraTabletInstance;
+            LckSocialCamera camera = LckSocialCameraManager.Instance._networkedTablet;
             camera.visible = true;
             camera.recording = true;
 
@@ -5114,7 +5116,7 @@ Piece Name: {gunTarget.name}";
 
         public static void CameraAura()
         {
-            LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraCococamInstance;
+            LckSocialCamera camera = LckSocialCameraManager.Instance._networkedCococam;
             camera.visible = true;
             camera.recording = true;
 
@@ -5127,7 +5129,7 @@ Piece Name: {gunTarget.name}";
 
         public static void TabletAura()
         {
-            LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraTabletInstance;
+            LckSocialCamera camera = LckSocialCameraManager.Instance._networkedTablet;
             camera.visible = true;
             camera.recording = true;
 
@@ -5236,7 +5238,7 @@ Piece Name: {gunTarget.name}";
             VRRig.LocalRig.enabled = false;
             VRRig.LocalRig.transform.position = GorillaTagger.Instance.bodyCollider.transform.position - Vector3.up * 99999f;
 
-            LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraCococamInstance;
+            LckSocialCamera camera = LckSocialCameraManager.Instance._networkedCococam;
             camera.visible = true;
             camera.recording = true;
 
@@ -5252,7 +5254,7 @@ Piece Name: {gunTarget.name}";
             VRRig.LocalRig.enabled = false;
             VRRig.LocalRig.transform.position = GorillaTagger.Instance.bodyCollider.transform.position - Vector3.up * 99999f;
 
-            LckSocialCamera camera = LckSocialCameraManager.Instance._socialCameraTabletInstance;
+            LckSocialCamera camera = LckSocialCameraManager.Instance._networkedTablet;
             camera.visible = true;
             camera.recording = true;
 
@@ -6556,7 +6558,7 @@ Piece Name: {gunTarget.name}";
             if (!PhotonNetwork.InRoom) return;
             List<VRRig> nearbyPlayers = new List<VRRig>();
 
-            foreach (VRRig vrrig in GorillaParent.instance.vrrigs)
+            foreach (VRRig vrrig in VRRigCache.AllRigs)
             {
                 if (Vector3.Distance(vrrig.transform.position, VRRig.LocalRig.transform.position) < 4 && !vrrig.IsLocal())
                     nearbyPlayers.Add(vrrig);
@@ -6580,7 +6582,7 @@ Piece Name: {gunTarget.name}";
 
             List<VRRig> touchedPlayers = new List<VRRig>();
 
-            foreach (VRRig rig in GorillaParent.instance.vrrigs)
+            foreach (VRRig rig in VRRigCache.AllRigs)
             {
                 if (!rig.IsLocal())
                 {
@@ -6604,7 +6606,7 @@ Piece Name: {gunTarget.name}";
 
         public static void CopyIDAll()
         {
-            foreach (var id in GorillaParent.instance.vrrigs.Select(vrrig => GetPlayerFromVRRig(vrrig).UserId))
+            foreach (var id in VRRigCache.AllRigs.Select(vrrig => GetPlayerFromVRRig(vrrig).UserId))
             {
                 NotificationManager.SendNotification("<color=grey>[</color><color=green>SUCCESS</color><color=grey>]</color> " + id, 5000);
                 GUIUtility.systemCopyBuffer = id;
@@ -6640,7 +6642,7 @@ Piece Name: {gunTarget.name}";
         public static void NarrateIDAll()
         {
             string ids = "";
-            foreach (VRRig vrrig in GorillaParent.instance.vrrigs)
+            foreach (VRRig vrrig in VRRigCache.AllRigs)
             {
                 if (!vrrig.isLocal)
                     ids += "Name: " + GetPlayerFromVRRig(vrrig).NickName + ". I D: " + string.Join(" ", GetPlayerFromVRRig(vrrig).UserId) + ". ";
@@ -6654,7 +6656,7 @@ Piece Name: {gunTarget.name}";
             if (!PhotonNetwork.InRoom) return;
             List<VRRig> nearbyPlayers = new List<VRRig>();
 
-            foreach (VRRig vrrig in GorillaParent.instance.vrrigs)
+            foreach (VRRig vrrig in VRRigCache.AllRigs)
             {
                 if (Vector3.Distance(vrrig.transform.position, VRRig.LocalRig.transform.position) < 4 && !vrrig.IsLocal())
                     nearbyPlayers.Add(vrrig);
@@ -6679,7 +6681,7 @@ Piece Name: {gunTarget.name}";
 
             List<VRRig> touchedPlayers = new List<VRRig>();
 
-            foreach (VRRig rig in GorillaParent.instance.vrrigs)
+            foreach (VRRig rig in VRRigCache.AllRigs)
             {
                 if (!rig.IsLocal())
                 {
@@ -6727,7 +6729,7 @@ Piece Name: {gunTarget.name}";
         public static void NarrateFakeDoxxAll()
         {
             string ids = "";
-            foreach (VRRig vrrig in GorillaParent.instance.vrrigs)
+            foreach (VRRig vrrig in VRRigCache.AllRigs)
             {
                 if (!vrrig.isLocal)
                     ids += "Name: " + GetPlayerFromVRRig(vrrig).NickName + ". I P  ADD DRESS: " + string.Join(" ", $"{Random.Range(1, 255)}.{Random.Range(1, 255)}.{Random.Range(1, 255)}") + ". ";
@@ -6740,7 +6742,7 @@ Piece Name: {gunTarget.name}";
             if (!PhotonNetwork.InRoom) return;
             List<VRRig> nearbyPlayers = new List<VRRig>();
 
-            foreach (VRRig vrrig in GorillaParent.instance.vrrigs)
+            foreach (VRRig vrrig in VRRigCache.AllRigs)
             {
                 if (Vector3.Distance(vrrig.transform.position, VRRig.LocalRig.transform.position) < 4 && !vrrig.IsLocal())
                     nearbyPlayers.Add(vrrig);
@@ -6765,7 +6767,7 @@ Piece Name: {gunTarget.name}";
 
             List<VRRig> touchedPlayers = new List<VRRig>();
 
-            foreach (VRRig rig in GorillaParent.instance.vrrigs)
+            foreach (VRRig rig in VRRigCache.AllRigs)
             {
                 if (!rig.IsLocal())
                 {
@@ -6826,7 +6828,7 @@ Piece Name: {gunTarget.name}";
             if (!PhotonNetwork.InRoom) return;
             List<VRRig> nearbyPlayers = new List<VRRig>();
 
-            foreach (VRRig vrrig in GorillaParent.instance.vrrigs)
+            foreach (VRRig vrrig in VRRigCache.AllRigs)
             {
                 if (Vector3.Distance(vrrig.transform.position, VRRig.LocalRig.transform.position) < 4 && !vrrig.IsLocal())
                     nearbyPlayers.Add(vrrig);
@@ -6845,7 +6847,7 @@ Piece Name: {gunTarget.name}";
 
             List<VRRig> touchedPlayers = new List<VRRig>();
 
-            foreach (VRRig rig in GorillaParent.instance.vrrigs)
+            foreach (VRRig rig in VRRigCache.AllRigs)
             {
                 if (!rig.IsLocal())
                 {
@@ -6866,7 +6868,7 @@ Piece Name: {gunTarget.name}";
 
         public static void CopyCreationDateAll()
         {
-            foreach (var date in GorillaParent.instance.vrrigs.Select(vrrig => GetCreationDate(GetPlayerFromVRRig(vrrig).UserId, CopyCreationDate)).Where(date => date != "Loading..."))
+            foreach (var date in VRRigCache.AllRigs.Select(vrrig => GetCreationDate(GetPlayerFromVRRig(vrrig).UserId, CopyCreationDate)).Where(date => date != "Loading..."))
             {
                 CopyCreationDate(date);
             }
@@ -6887,7 +6889,7 @@ Piece Name: {gunTarget.name}";
 
         public static void NarrateCreationDateAll()
         {
-            foreach (var date in GorillaParent.instance.vrrigs.Select(vrrig => GetCreationDate(GetPlayerFromVRRig(vrrig).UserId, SpeakText)).Where(date => date != "Loading..."))
+            foreach (var date in VRRigCache.AllRigs.Select(vrrig => GetCreationDate(GetPlayerFromVRRig(vrrig).UserId, SpeakText)).Where(date => date != "Loading..."))
                 SpeakText(date);
         }
 
@@ -6896,7 +6898,7 @@ Piece Name: {gunTarget.name}";
             if (!PhotonNetwork.InRoom) return;
             List<VRRig> nearbyPlayers = new List<VRRig>();
 
-            foreach (VRRig vrrig in GorillaParent.instance.vrrigs)
+            foreach (VRRig vrrig in VRRigCache.AllRigs)
             {
                 if (Vector3.Distance(vrrig.transform.position, VRRig.LocalRig.transform.position) < 4 && !vrrig.IsLocal())
                     nearbyPlayers.Add(vrrig);
@@ -6915,7 +6917,7 @@ Piece Name: {gunTarget.name}";
         {
             if (!PhotonNetwork.InRoom) return;
 
-            List<VRRig> touchedPlayers = GorillaParent.instance.vrrigs.Where(rig => !rig.IsLocal()).Where(rig => Vector3.Distance(rig.transform.position, GorillaTagger.Instance.offlineVRRig.rightHandTransform.position) <= 0.35f || Vector3.Distance(rig.transform.position, GorillaTagger.Instance.offlineVRRig.leftHandTransform.position) <= 0.35f).ToList();
+            List<VRRig> touchedPlayers = VRRigCache.AllRigs.Where(rig => !rig.IsLocal()).Where(rig => Vector3.Distance(rig.transform.position, GorillaTagger.Instance.offlineVRRig.rightHandTransform.position) <= 0.35f || Vector3.Distance(rig.transform.position, GorillaTagger.Instance.offlineVRRig.leftHandTransform.position) <= 0.35f).ToList();
 
             if (touchedPlayers.Count <= 0 || Time.time < allNarrationDelay) return;
             allNarrationDelay = Time.time + 10f;
@@ -6961,7 +6963,7 @@ Piece Name: {gunTarget.name}";
                     r = plr.playerColor.r * 255;
                     g = plr.playerColor.g * 255;
                     b = plr.playerColor.b * 255;
-                    cosmetics = plr.rawCosmeticString;
+                    cosmetics = plr.RawCosmeticString();
                 }
                 catch { LogManager.Log("Failed to log colors, rig most likely nonexistent"); }
                 try
