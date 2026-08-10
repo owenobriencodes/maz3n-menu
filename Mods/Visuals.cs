@@ -167,7 +167,7 @@ namespace iiMenu.Mods
         public static void ConductDebug()
         {
             string text = "";
-            text += "<color=blue><b>ii's Stupid Menu </b></color>" + PluginInfo.Version + "\\n \\n";
+            text += "<color=blue><b>MAZ3N Menu </b></color>" + PluginInfo.Version + "\\n \\n";
             
             string red = "<color=red>" + MathF.Floor(PlayerPrefs.GetFloat("redValue") * 255f) + "</color>";
             string green = ", <color=green>" + MathF.Floor(PlayerPrefs.GetFloat("greenValue") * 255f) + "</color>";
@@ -554,7 +554,7 @@ namespace iiMenu.Mods
 
             Text watchTextComponent = regwatchText.GetComponent<Text>();
 
-            if (infoWatchMenuName || defaultWatch) watchTextComponent.text = "ii's Stupid Menu\n<color=grey>";
+            if (infoWatchMenuName || defaultWatch) watchTextComponent.text = "MAZ3N Menu\n<color=grey>";
             if (doCustomName && (infoWatchMenuName || defaultWatch))
                 watchTextComponent.text = NoRichtextTags(customMenuName) + "\n<color=grey>";
             if (!infoWatchMenuName && !defaultWatch)

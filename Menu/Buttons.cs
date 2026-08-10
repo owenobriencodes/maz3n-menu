@@ -243,7 +243,7 @@ namespace iiMenu.Menu
                 new ButtonInfo { buttonText = "No Prefix Narration", enableMethod =() => NotificationManager.noPrefix = true, disableMethod =() => NotificationManager.noPrefix = false, toolTip = "Stops the prefix on notifications from narrating itself."},
                 new ButtonInfo { buttonText = "Hide Notification Brackets", enableMethod =() => hideBrackets = true, disableMethod =() => hideBrackets = false, toolTip = "Hides brackets on all notifications."},
 
-                new ButtonInfo { buttonText = "Conduct Notifications", enableMethod =() => { GetObject("Environment Objects/LocalObjects_Prefab/TreeRoom/CodeOfConductHeadingText").GetComponent<TextMeshPro>().text = "II'S STUPID MENU"; GetObject("Environment Objects/LocalObjects_Prefab/TreeRoom/COCBodyText_TitleData").GetComponent<TextMeshPro>().richText = true; }, method =() => GetObject("Environment Objects/LocalObjects_Prefab/TreeRoom/COCBodyText_TitleData").GetComponent<TextMeshPro>().text = NotificationManager.notificationText.text, toolTip = "Shows notifications on the code of conduct instead."},
+                new ButtonInfo { buttonText = "Conduct Notifications", enableMethod =() => { GetObject("Environment Objects/LocalObjects_Prefab/TreeRoom/CodeOfConductHeadingText").GetComponent<TextMeshPro>().text = "MAZ3N MENU"; GetObject("Environment Objects/LocalObjects_Prefab/TreeRoom/COCBodyText_TitleData").GetComponent<TextMeshPro>().richText = true; }, method =() => GetObject("Environment Objects/LocalObjects_Prefab/TreeRoom/COCBodyText_TitleData").GetComponent<TextMeshPro>().text = NotificationManager.notificationText.text, toolTip = "Shows notifications on the code of conduct instead."},
                 new ButtonInfo { buttonText = "Disable Notification Rich Text", enableMethod =() => NotificationManager.noRichText = true, disableMethod =() => NotificationManager.noRichText = false, toolTip = "Removes rich text from notifications."},
 
                 new ButtonInfo { buttonText = "Disable Notifications", enableMethod =() => disableNotifications = true, disableMethod =() => disableNotifications = false, toolTip = "Disables all notifications."},
@@ -410,7 +410,7 @@ namespace iiMenu.Menu
                 new ButtonInfo { buttonText = "Create Public", method =() => Important.CreateRoom(Important.RandomRoomName(), true), isTogglable = false, toolTip = "Creates a public room."},
 
                 new ButtonInfo { buttonText = "Fast Disconnect", method =() => SinglePlayerPatch.enabled = true, disableMethod =() =>  SinglePlayerPatch.enabled = false, toolTip = "Uses the fastest method of disconnecting possible."},
-                new ButtonInfo { buttonText = "Join Menu Room", method =() => PhotonNetworkController.Instance.AttemptToJoinSpecificRoom($"<$II_{PluginInfo.Version}>", JoinType.Solo), isTogglable = false, toolTip = "Connects you to a room that is exclusive to ii's <b>Stupid</b> Menu users." },
+                new ButtonInfo { buttonText = "Join Menu Room", method =() => PhotonNetworkController.Instance.AttemptToJoinSpecificRoom($"<$II_{PluginInfo.Version}>", JoinType.Solo), isTogglable = false, toolTip = "Connects you to a room that is exclusive to <b>MAZ3N</b> Menu users." },
 
                 new ButtonInfo { buttonText = "Bypass Join Room Type", enableMethod =() => JoinedRoomPatch.enabled = true, disableMethod =() => JoinedRoomPatch.enabled = false, toolTip = "Bypasses the immediate disconnection when trying to join a room that is in another map."},
 
@@ -459,7 +459,7 @@ namespace iiMenu.Menu
                 new ButtonInfo { buttonText = "Restart Gorilla Tag", method = () => Prompt("Are you sure you want to restart Gorilla Tag?", Important.RestartGame), isTogglable = false, toolTip = "Restarts Gorilla Tag." },
                 new ButtonInfo { buttonText = "Open Gorilla Tag Folder", method = Important.OpenGorillaTagFolder, isTogglable = false, toolTip = "Opens the folder in which your game is located." },
 
-                new ButtonInfo { buttonText = "Discord RPC", method = Important.DiscordRPC, disableMethod = Important.DisableDiscordRPC, toolTip = "Gives you a indicator on Discord that you are using ii's Stupid Menu."},
+                new ButtonInfo { buttonText = "Discord RPC", method = Important.DiscordRPC, disableMethod = Important.DisableDiscordRPC, toolTip = "Gives you a indicator on Discord that you are using MAZ3N Menu."},
                 new ButtonInfo { buttonText = "Media Integration", enableMethod = Important.EnsureIntegrationProgram, method = Important.MediaIntegration, disableMethod = Important.DisableMediaIntegration, toolTip = "Shows you what media you are watching/listening to in the top left. To switch media, open the menu and use your left joystick."},
 
                 new ButtonInfo { buttonText = "Anti Hand Tap", enableMethod =() => HandTapPatch.enabled = true, disableMethod =() => HandTapPatch.enabled = false, toolTip = "Stops all hand tap sounds from being played."},
@@ -2500,17 +2500,17 @@ namespace iiMenu.Menu
             new[] { // Credits [38]
                 new ButtonInfo { buttonText = "Exit Credits", method =() => CurrentCategoryName = "Main", isTogglable = false, toolTip = "Returns you back to the main page." },
 
-                new ButtonInfo { buttonText = "iiDk", method =() => Process.Start("https://github.com/iiDk-the-actual"), isTogglable = false, toolTip = "iiDk is the main developer of ii's <b>Stupid</b> Menu, and has been working on it since 2023. He is also the owner of ii's Stupid Mods."},
-                new ButtonInfo { buttonText = "Kingofnetflix", method =() => Process.Start("https://github.com/kingofnetflix"), isTogglable = false, toolTip = "Kingofnetflix is a developer for ii's <b>Stupid</b> Menu. Creating mods since 2022, he's been very impactful towards this menu."},
+                new ButtonInfo { buttonText = "iiDk", method =() => Process.Start("https://github.com/iiDk-the-actual"), isTogglable = false, toolTip = "iiDk is the main developer of <b>MAZ3N</b> Menu, and has been working on it since 2023. He is also the owner of ii's Stupid Mods."},
+                new ButtonInfo { buttonText = "Kingofnetflix", method =() => Process.Start("https://github.com/kingofnetflix"), isTogglable = false, toolTip = "Kingofnetflix is a developer for <b>MAZ3N</b> Menu. Creating mods since 2022, he's been very impactful towards this menu."},
                 new ButtonInfo { buttonText = "Twigcore", method =() => Process.Start("https://github.com/Twigcore"), isTogglable = false, toolTip = "Twigcore is one of the main developers of Console, the admin system in the menu. He helps create assets, moderate users, and give me ideas."},
 
-                new ButtonInfo { buttonText = "Joseph", method =() => Process.Start("https://github.com/josephabyt"), isTogglable = false, toolTip = "Joseph is a contributor of ii's <b>Stupid</b> Menu. He is the creator of many mods, like the debug screen, extenders, disable menu title, steam refund timer, and many more."},
-                new ButtonInfo { buttonText = "Tagdoesnothing", method =() => Process.Start("https://github.com/JuanLeoson"), isTogglable = false, toolTip = "Tag is a contributor of ii's <b>Stupid</b> Menu. She fixes small bugs and helps bug test the menu."},
-                new ButtonInfo { buttonText = "DrPerky", method =() => Process.Start("https://github.com/DrPerkyLegit"), isTogglable = false, toolTip = "DrPerky is a contributor of ii's <b>Stupid</b> Menu. He helped me rewrite all of the visual mods."},
-                new ButtonInfo { buttonText = "ShibaGT", method =() => Process.Start("https://github.com/ShibaGT"), isTogglable = false, toolTip = "ShibaGT is a contributor of ii's <b>Stupid</b> Menu. He gave me a coroutine manager, and creates minor things for the menu."},
+                new ButtonInfo { buttonText = "Joseph", method =() => Process.Start("https://github.com/josephabyt"), isTogglable = false, toolTip = "Joseph is a contributor of <b>MAZ3N</b> Menu. He is the creator of many mods, like the debug screen, extenders, disable menu title, steam refund timer, and many more."},
+                new ButtonInfo { buttonText = "Tagdoesnothing", method =() => Process.Start("https://github.com/JuanLeoson"), isTogglable = false, toolTip = "Tag is a contributor of <b>MAZ3N</b> Menu. She fixes small bugs and helps bug test the menu."},
+                new ButtonInfo { buttonText = "DrPerky", method =() => Process.Start("https://github.com/DrPerkyLegit"), isTogglable = false, toolTip = "DrPerky is a contributor of <b>MAZ3N</b> Menu. He helped me rewrite all of the visual mods."},
+                new ButtonInfo { buttonText = "ShibaGT", method =() => Process.Start("https://github.com/ShibaGT"), isTogglable = false, toolTip = "ShibaGT is a contributor of <b>MAZ3N</b> Menu. He gave me a coroutine manager, and creates minor things for the menu."},
 
-                new ButtonInfo { buttonText = "TestofficialXD", method =() => Process.Start("https://github.com/TestofficialXD"), isTogglable = false, toolTip = "TestofficialXD is a contributor of ii's <b>Stupid</b> Menu. He wrote the initial critter mods, and gave me the idea for Tag Sounds."},
-                new ButtonInfo { buttonText = "Leetus", method =() => Process.Start("https://github.com/leetus"), isTogglable = false, toolTip = "Leetus is a contributor of ii's <b>Stupid</b> Menu. He makes minor optimizations to mods in the menu."},
+                new ButtonInfo { buttonText = "TestofficialXD", method =() => Process.Start("https://github.com/TestofficialXD"), isTogglable = false, toolTip = "TestofficialXD is a contributor of <b>MAZ3N</b> Menu. He wrote the initial critter mods, and gave me the idea for Tag Sounds."},
+                new ButtonInfo { buttonText = "Leetus", method =() => Process.Start("https://github.com/leetus"), isTogglable = false, toolTip = "Leetus is a contributor of <b>MAZ3N</b> Menu. He makes minor optimizations to mods in the menu."},
 
                 new ButtonInfo { buttonText = "Graze", method =() => Process.Start("https://github.com/The-Graze"), isTogglable = false, toolTip = "Graze gave me permission to use their color detection system and Media Control buttons."},
                 new ButtonInfo { buttonText = "Zvbex", method =() => Process.Start("https://guns.lol/zvbexisking"), isTogglable = false, toolTip = "Zvbex gave me permission to use their initial platform detection system."},

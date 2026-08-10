@@ -23,21 +23,23 @@ namespace iiMenu
 {
     public class PluginInfo
     {
-        public const string GUID = "org.iidk.gorillatag.iimenu";
-        public const string Name = "ii's Stupid Menu";
-        public const string Description = "Created by @crimsoncauldron with love <3";
-        public const string BuildTimestamp = "2026-08-10T01:17:09Z";
+        public const string GUID = "org.maz3n.gorillatag.maz3nmenu";
+        public const string Name = "MAZ3N Menu";
+        public const string Description = "MAZ3N Menu -- a fork of ii's Stupid Menu by @crimsoncauldron";
+        public const string BuildTimestamp = "2026-08-10T02:32:17Z";
         public const string Version = "8.2.4";
 
-        public const string BaseDirectory = "iisStupidMenu";
+        public const string BaseDirectory = "MAZ3N Menu";
         public const string ClientResourcePath = "iiMenu.Resources.Client";
         public const string ServerResourcePath = "https://raw.githubusercontent.com/iiDk-the-actual/iis.Stupid.Menu/master/Resources/Server";
         public const string ServerAPI = "https://iidk.online"; // Server now closed source due to bad actors :( For any questions, please make an issue on the GitHub repository.
         
-        public const string Logo = @"••╹   ┏┓     • ┓  ┳┳┓      
-┓┓ ┏  ┗┓╋┓┏┏┓┓┏┫  ┃┃┃┏┓┏┓┓┏
-┗┗ ┛  ┗┛┗┗┻┣┛┗┗┻  ┛ ┗┗ ┛┗┗┻
-           ┛";
+        public const string Logo = @"███╗   ███╗ █████╗ ███████╗██████╗ ███╗   ██╗
+████╗ ████║██╔══██╗╚══███╔╝╚════██╗████╗  ██║
+██╔████╔██║███████║  ███╔╝  █████╔╝██╔██╗ ██║
+██║╚██╔╝██║██╔══██║ ███╔╝   ╚═══██╗██║╚██╗██║
+██║ ╚═╝ ██║██║  ██║███████╗██████╔╝██║ ╚████║
+╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚═════╝ ╚═╝  ╚═══╝";
 
 #if DEBUG
         public static bool BetaBuild = true;

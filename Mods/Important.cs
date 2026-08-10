@@ -209,7 +209,7 @@ namespace iiMenu.Mods
                 .Aggregate("", (current, line) => current + (Environment.NewLine + "echo      " + line));
 
             string restartScript = @"@echo off
-title ii's Stupid Menu
+title MAZ3N Menu
 color 0E
 
 cls
@@ -288,7 +288,7 @@ exit";
                     Assets = new Managers.DiscordRPC.Assets
                     {
                         LargeImageKey = "cone",
-                        LargeImageText = "ii's Stupid Menu",
+                        LargeImageText = "MAZ3N Menu",
                         SmallImageKey = inRoom ? "online" : "offline",
                         SmallImageText = inRoom ? "Online" : "Offline"
                     },

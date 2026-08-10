@@ -334,7 +334,7 @@ namespace iiMenu.Menu
             else
             {
                 if (!File.Exists(hideGUIPath))
-                    File.WriteAllText(hideGUIPath, "Text file generated with ii's Stupid Menu");
+                    File.WriteAllText(hideGUIPath, "Text file generated with MAZ3N Menu");
             }
 
             GameObject closeMessage = uiPrefab.transform.Find("Canvas")?.Find("HideMessage")?.gameObject;

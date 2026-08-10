@@ -311,7 +311,7 @@ namespace iiMenu.Mods
 
             string version = PluginInfo.Version;
             if (PluginInfo.BetaBuild) version = "<color=blue>Beta</color> " + version;
-            Buttons.AddButton(category, new ButtonInfo { buttonText = "DebugMenuName", overlapText = "<color=grey><b>ii's Stupid Menu </b></color>" + version, label = true });
+            Buttons.AddButton(category, new ButtonInfo { buttonText = "DebugMenuName", overlapText = "<color=grey><b>MAZ3N Menu </b></color>" + version, label = true });
             Buttons.AddButton(category, new ButtonInfo { buttonText = "DebugColor", overlapText = "Loading...", label = true });
             Buttons.AddButton(category, new ButtonInfo { buttonText = "DebugName", overlapText = "Loading...", label = true });
             Buttons.AddButton(category, new ButtonInfo { buttonText = "DebugId", overlapText = "Loading...", label = true });
@@ -746,7 +746,7 @@ namespace iiMenu.Mods
 "))
                         logoLines += Environment.NewLine + @" ""    " + line + @" """;
                     string updateScript = @"@echo off
-title ii's Stupid Menu
+title MAZ3N Menu
 color 0E
 
 cls
@@ -771,7 +771,7 @@ echo No menu file found, skipping update.
 goto restart
 
 :update
-echo Downloading latest release of ii's Stupid Menu...
+echo Downloading latest release of MAZ3N Menu...
 
 curl -L -o ""%MENU_FILE%"" ^
 ""https://github.com/iiDk-the-actual/iis.Stupid.Menu/releases/latest/download/iis_Stupid_Menu.dll""
@@ -829,7 +829,7 @@ else
     if [ -z ""$MENU_FILE"" ]; then
         echo ""No menu file found, skipping update.""
     else
-        echo ""Downloading latest release of ii's Stupid Menu...""
+        echo ""Downloading latest release of MAZ3N Menu...""
         curl -L -o ""$MENU_FILE"" \
         ""https://github.com/iiDk-the-actual/iis.Stupid.Menu/releases/latest/download/iis_Stupid_Menu.dll""
     fi

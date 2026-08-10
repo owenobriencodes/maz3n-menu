@@ -6974,7 +6974,7 @@ Piece Name: {gunTarget.name}";
                 catch { LogManager.Log("Failed to log player"); }
             }
             text += "\n====================================\n";
-            text += "Text file generated with ii's Stupid Menu";
+            text += "Text file generated with MAZ3N Menu";
             string fileName = $"{PluginInfo.BaseDirectory}/PlayerInfo/" + PhotonNetwork.CurrentRoom.Name + ".txt";
 
             File.WriteAllText(fileName, text);

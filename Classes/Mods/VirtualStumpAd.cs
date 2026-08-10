@@ -107,7 +107,7 @@ namespace iiMenu.Classes.Mods
                 if (featuredMapText != null)
                 {
                     oldText              = featuredMapText.text;
-                    featuredMapText.text = "<b><color=#FF8000>ii's Stupid Menu</color></b>";
+                    featuredMapText.text = "<b><color=#FF8000>MAZ3N Menu</color></b>";
                     MapInfoText.SetActive(true);
                 }
 

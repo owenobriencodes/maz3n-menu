@@ -45,7 +45,7 @@ namespace iiMenu
         private void Awake()
         {
             // Set console title
-            Console.Title = $"ii's Stupid Menu // Build {PluginInfo.Version}";
+            Console.Title = $"MAZ3N Menu // Build {PluginInfo.Version}";
             instance = this;
 
             string logoLines = PluginInfo.Logo.Split(@"
@@ -54,7 +54,7 @@ namespace iiMenu
 
             LogManager.Log($@"
 {logoLines}
-    ii's Stupid Menu  {(PluginInfo.BetaBuild ? "Beta " : "Build")} {PluginInfo.Version}
+    MAZ3N Menu  {(PluginInfo.BetaBuild ? "Beta " : "Build")} {PluginInfo.Version}
     Compiled {PluginInfo.BuildTimestamp}
     
     This program comes with ABSOLUTELY NO WARRANTY;

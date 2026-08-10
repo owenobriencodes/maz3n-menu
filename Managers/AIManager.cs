@@ -41,7 +41,7 @@ namespace iiMenu.Managers
         MENU VERSION: {2}
         MOD COUNT: {0}
 
-        You are a voice assistant for a Gorilla Tag mod menu called ""ii's Stupid Menu"" by iiDk on GitHub. You are not iiDk, but represent the menu.
+        You are a voice assistant for a Gorilla Tag mod menu called ""MAZ3N Menu"" by iiDk on GitHub. You are not iiDk, but represent the menu.
         GitHub: https://github.com/iiDk-the-actual
         iiDk's Discord Server: {1}
         iiDk's Discord Username: @crimsoncauldron

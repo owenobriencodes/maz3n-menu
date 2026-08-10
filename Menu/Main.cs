@@ -521,7 +521,7 @@ namespace iiMenu.Menu
 
                 if (animatedTitle && title != null)
                 {
-                    string targetString = doCustomName ? NoRichtextTags(customMenuName) : "ii's Stupid Menu";
+                    string targetString = doCustomName ? NoRichtextTags(customMenuName) : "MAZ3N Menu";
                     int length = (int)Mathf.PingPong(Time.time / 0.25f, targetString.Length + 1);
                     title.text = length > 0 ? targetString[..length] : "";
                 }
@@ -2632,7 +2632,7 @@ namespace iiMenu.Menu
                     }
                 }.AddComponent<TextMeshPro>();
                 title.font = activeFont;
-                title.text = translate ? "ii's Stupid Menu" : "ii's <b>Stupid</b> Menu";
+                title.text = translate ? "MAZ3N Menu" : "<b>MAZ3N</b> Menu";
 
                 if (doCustomName)
                     title.text = customMenuName;
@@ -2674,7 +2674,7 @@ namespace iiMenu.Menu
 
                 if (animatedTitle)
                 {
-                    string targetString = doCustomName ? NoRichtextTags(customMenuName) : "ii's Stupid Menu";
+                    string targetString = doCustomName ? NoRichtextTags(customMenuName) : "MAZ3N Menu";
                     int length = (int)Mathf.PingPong(Time.time / 0.25f, targetString.Length);
                     title.text = length > 0 ? targetString[..length] : "";
                 }
