@@ -6999,42 +6999,40 @@ jgs \_   _/ |Oo\
         public static int themeType = 1;
         public static bool slowFadeColors;
 
-        // Fundo azul
-public static ExtGradient backgroundColor = new ExtGradient
-{
-    colors = ExtGradient.GetSimpleGradient(
-        new Color32(0, 128, 255, 128),   // Azul claro
-        new Color32(0, 102, 204, 128)    // Azul escuro
-    )
-};
+// MAZ3N theme: base cycles through the RGB rainbow (built-in rainbow mode,
+        // animated via GetCurrentColor since dynamicGradients is off by default).
+        public static ExtGradient backgroundColor = new ExtGradient
+        {
+            rainbow = true
+        };
 
-// Botões azuis
-public static ExtGradient[] buttonColors = {
-    new ExtGradient 
-    {
-        colors = ExtGradient.GetSolidGradient(new Color32(0, 85, 170, 255))
-    },
-    new ExtGradient 
-    {
-        colors = ExtGradient.GetSolidGradient(new Color32(0, 42, 85, 255))
-    }
-};
+// MAZ3N theme: rectangle buttons are black.
+        public static ExtGradient[] buttonColors = {
+            new ExtGradient // Released
+            {
+                colors = ExtGradient.GetSolidGradient(Color.black)
+            },
+            new ExtGradient // Pressed -- near-black so a press is still visible
+            {
+                colors = ExtGradient.GetSolidGradient(new Color32(50, 50, 50, 255))
+            }
+        };
 
-// Texto azul claro
-public static ExtGradient[] textColors = {
-    new ExtGradient 
-    {
-        colors = ExtGradient.GetSolidGradient(new Color32(125, 190, 255, 255))
-    },
-    new ExtGradient 
-    {
-        colors = ExtGradient.GetSolidGradient(new Color32(125, 190, 255, 255))
-    },
-    new ExtGradient 
-    {
-        colors = ExtGradient.GetSolidGradient(new Color32(125, 190, 255, 255))
-    }
-};
+// MAZ3N theme: all menu text is white.
+        public static ExtGradient[] textColors = {
+            new ExtGradient // Title
+            {
+                colors = ExtGradient.GetSolidGradient(Color.white)
+            },
+            new ExtGradient // Button Released
+            {
+                colors = ExtGradient.GetSolidGradient(Color.white)
+            },
+            new ExtGradient // Button Clicked
+            {
+                colors = ExtGradient.GetSolidGradient(Color.white)
+            }
+        };
         public static Vector3 closePosition;
 
         public static Vector3 pointerOffset = new Vector3(0f, -0.1f, 0f);
