@@ -20,14 +20,28 @@
  */
 
 using HarmonyLib;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace iiMenu.Patches.Menu
 {
-    [HarmonyPatch(typeof(FriendCard), nameof(FriendCard.Populate))]
+    [HarmonyPatch]
     public class PopulatePatch
     {
         public static bool enabled;
 
+        // The 2026-06-26 VIM update added a Populate(Friend, bool isVimSlot)
+        // overload alongside Populate(Friend), which made a name-only patch
+        // target ambiguous. Target every overload so another one appearing
+        // does not break this again.
+        [HarmonyTargetMethods]
+        private static IEnumerable<MethodBase> TargetMethods() =>
+            AccessTools.GetDeclaredMethods(typeof(FriendCard))
+                .Where(method => method.Name == nameof(FriendCard.Populate))
+                .Cast<MethodBase>();
+
+        [HarmonyPostfix]
         public static void Postfix(FriendCard __instance, FriendBackendController.Friend friend)
         {
             if (enabled)
