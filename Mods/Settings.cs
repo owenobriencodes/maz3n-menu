@@ -6334,18 +6334,27 @@ exit 0";
             LeftOverride
         }
 
+        // Indexer syntax, not { key, value } collection-initializer syntax, on purpose.
+        // The initializer form calls Add, which throws on a duplicate key -- and a throw
+        // here happens in this type's static constructor, which permanently poisons
+        // iiMenu.Mods.Settings. Every later member access then rethrows
+        // TypeInitializationException, including the Settings.pcBindings reads inside the
+        // GTPlayer.LateUpdate patch, so the game's own LateUpdate aborted every frame and
+        // the player's hands stopped updating. The indexer overwrites instead of throwing.
         public static readonly Dictionary<ControllerBinding, KeyCode> pcBindings = new Dictionary<ControllerBinding, KeyCode>
         {
-            { ControllerBinding.RightPrimaryButton, KeyCode.E },
-            { ControllerBinding.RightSecondaryButton, KeyCode.R },
-            { ControllerBinding.LeftPrimaryButton, KeyCode.F },
-            { ControllerBinding.LeftSecondaryButton, KeyCode.G },
-            { ControllerBinding.LeftGrip, KeyCode.LeftBracket },
-            { ControllerBinding.RightGrip, KeyCode.RightBracket },
-            { ControllerBinding.LeftTrigger, KeyCode.Minus },
-            { ControllerBinding.LeftTrigger, KeyCode.Equals },
-            { ControllerBinding.JoystickClick, KeyCode.Return },
-            { ControllerBinding.LeftOverride, KeyCode.LeftAlt }
+            [ControllerBinding.RightPrimaryButton] = KeyCode.E,
+            [ControllerBinding.RightSecondaryButton] = KeyCode.R,
+            [ControllerBinding.LeftPrimaryButton] = KeyCode.F,
+            [ControllerBinding.LeftSecondaryButton] = KeyCode.G,
+            [ControllerBinding.LeftGrip] = KeyCode.LeftBracket,
+            [ControllerBinding.RightGrip] = KeyCode.RightBracket,
+            [ControllerBinding.LeftTrigger] = KeyCode.Minus,
+            // Was a second LeftTrigger entry, which both threw the duplicate-key
+            // exception above and left RightTrigger absent -- Main.cs reads it.
+            [ControllerBinding.RightTrigger] = KeyCode.Equals,
+            [ControllerBinding.JoystickClick] = KeyCode.Return,
+            [ControllerBinding.LeftOverride] = KeyCode.LeftAlt
         };
 
         public static void LoadPCControls()
@@ -6356,7 +6365,13 @@ exit 0";
             {
                 string data = File.ReadAllText(fileName);
                 string[] lines = data.Split('\n');
-                pcBindings.Clear();
+
+                // Deliberately not cleared first. The file only overrides the bindings it
+                // actually names, so any binding it omits keeps its default instead of
+                // disappearing. Clearing here meant a control file saved by an older build
+                // -- for instance one written before RightTrigger existed -- left that key
+                // missing, and the every-frame pcBindings[RightTrigger] read in Main.cs
+                // threw KeyNotFoundException out of the GTPlayer.LateUpdate patch.
 
                 foreach (string line in lines)
                 {
