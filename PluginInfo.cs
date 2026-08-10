@@ -26,8 +26,12 @@ namespace iiMenu
         public const string GUID = "org.maz3n.gorillatag.maz3nmenu";
         public const string Name = "MAZ3N Menu";
         public const string Description = "MAZ3N Menu -- a fork of ii's Stupid Menu by @crimsoncauldron";
-        public const string BuildTimestamp = "2026-08-10T16:06:25Z";
-        public const string Version = "8.2.4";
+        public const string BuildTimestamp = "2026-08-10T16:29:48Z";
+        // Bumped from 8.2.4 to stop the false "update to 8.3.0" nag. ServerData compares
+        // this against the discontinued upstream server, which still reports 8.3.0; its
+        // self-updater pulls from the deleted upstream repo and would overwrite this
+        // working build with one that no longer runs. This fork is past that release.
+        public const string Version = "8.3.0";
 
         public const string BaseDirectory = "MAZ3N Menu";
         public const string ClientResourcePath = "iiMenu.Resources.Client";

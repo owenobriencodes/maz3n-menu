@@ -3250,6 +3250,50 @@ namespace iiMenu.Mods
             leafColorArchive.Clear();
         }
 
+        // Overrides the tree-room Code of Conduct sign with custom red text. This edits
+        // the local TreeRoom TextMeshPro objects only -- it is not networked and no other
+        // player ever sees it, so it is purely cosmetic for this client. Reversible.
+        private const string CocHeadingObject = "Environment Objects/LocalObjects_Prefab/TreeRoom/CodeOfConductHeadingText";
+        private const string CocBodyObject = "Environment Objects/LocalObjects_Prefab/TreeRoom/COCBodyText_TitleData";
+        private const string MazenConductText =
+            "<color=red>Hello little chipmunks, I hope you like this mod menu. " +
+            "It's called the maz3 and mod menu. I am not responsible for any bans that happen " +
+            "but I try to make this mod menu undetectable and this is a very good mod menu. " +
+            "With over a thousand mods</color>";
+        private static string _cocHeadingArchive;
+        private static string _cocBodyArchive;
+
+        public static void EnableMazenConduct()
+        {
+            TextMeshPro heading = GetObject(CocHeadingObject)?.GetComponent<TextMeshPro>();
+            TextMeshPro body = GetObject(CocBodyObject)?.GetComponent<TextMeshPro>();
+            if (heading == null || body == null)
+                return;
+
+            _cocHeadingArchive ??= heading.text;
+            _cocBodyArchive ??= body.text;
+
+            heading.richText = true;
+            body.richText = true;
+
+            heading.text = "";               // remove the "CODE OF CONDUCT" heading
+            body.text = MazenConductText;    // custom message, in red
+        }
+
+        public static void DisableMazenConduct()
+        {
+            TextMeshPro heading = GetObject(CocHeadingObject)?.GetComponent<TextMeshPro>();
+            TextMeshPro body = GetObject(CocBodyObject)?.GetComponent<TextMeshPro>();
+
+            if (heading != null && _cocHeadingArchive != null)
+                heading.text = _cocHeadingArchive;
+            if (body != null && _cocBodyArchive != null)
+                body.text = _cocBodyArchive;
+
+            _cocHeadingArchive = null;
+            _cocBodyArchive = null;
+        }
+
         public static readonly List<GameObject> cosmetics = new List<GameObject>();
         public static void DisableCosmetics()
         {
