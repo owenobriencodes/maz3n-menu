@@ -231,12 +231,21 @@ namespace iiMenu.Menu
             #region Controls
             try
             {
-                rightPrimary = ControllerInputPoller.instance.rightControllerPrimaryButton || UnityInput.Current.GetKey(Settings.pcBindings[Settings.ControllerBinding.RightPrimaryButton]);
-                rightSecondary = ControllerInputPoller.instance.rightControllerSecondaryButton || UnityInput.Current.GetKey(Settings.pcBindings[Settings.ControllerBinding.RightSecondaryButton]);
-                leftPrimary = ControllerInputPoller.instance.leftControllerPrimaryButton || UnityInput.Current.GetKey(Settings.pcBindings[Settings.ControllerBinding.LeftPrimaryButton]);
-                leftSecondary = ControllerInputPoller.instance.leftControllerSecondaryButton || UnityInput.Current.GetKey(Settings.pcBindings[Settings.ControllerBinding.LeftSecondaryButton]);
-                leftGrab = ControllerInputPoller.instance.leftGrab || UnityInput.Current.GetKey(Settings.pcBindings[Settings.ControllerBinding.LeftGrip]);
-                rightGrab = ControllerInputPoller.instance.rightGrab || UnityInput.Current.GetKey(Settings.pcBindings[Settings.ControllerBinding.RightGrip]);
+                // Gorilla Tag moved button state onto EControllerInputPressFlags and
+                // exposes it through the static XRNode accessors below. The legacy
+                // instance booleans (leftControllerSecondaryButton and friends) still
+                // exist on the type but are no longer driven by the game, so reading
+                // only those made the menu button dead while gameplay input worked.
+                // The trigger reads underneath were already on the static API.
+                //
+                // The legacy fields are still OR'd in because Console.cs writes to them
+                // to spoof controller input for the "fake input" commands.
+                rightPrimary = ControllerInputPoller.PrimaryButtonPress(XRNode.RightHand) || ControllerInputPoller.instance.rightControllerPrimaryButton || UnityInput.Current.GetKey(Settings.pcBindings[Settings.ControllerBinding.RightPrimaryButton]);
+                rightSecondary = ControllerInputPoller.SecondaryButtonPress(XRNode.RightHand) || ControllerInputPoller.instance.rightControllerSecondaryButton || UnityInput.Current.GetKey(Settings.pcBindings[Settings.ControllerBinding.RightSecondaryButton]);
+                leftPrimary = ControllerInputPoller.PrimaryButtonPress(XRNode.LeftHand) || ControllerInputPoller.instance.leftControllerPrimaryButton || UnityInput.Current.GetKey(Settings.pcBindings[Settings.ControllerBinding.LeftPrimaryButton]);
+                leftSecondary = ControllerInputPoller.SecondaryButtonPress(XRNode.LeftHand) || ControllerInputPoller.instance.leftControllerSecondaryButton || UnityInput.Current.GetKey(Settings.pcBindings[Settings.ControllerBinding.LeftSecondaryButton]);
+                leftGrab = ControllerInputPoller.GetGrab(XRNode.LeftHand) || ControllerInputPoller.instance.leftGrab || UnityInput.Current.GetKey(Settings.pcBindings[Settings.ControllerBinding.LeftGrip]);
+                rightGrab = ControllerInputPoller.GetGrab(XRNode.RightHand) || ControllerInputPoller.instance.rightGrab || UnityInput.Current.GetKey(Settings.pcBindings[Settings.ControllerBinding.RightGrip]);
                 leftTrigger = ControllerInputPoller.TriggerFloat(XRNode.LeftHand);
                 rightTrigger = ControllerInputPoller.TriggerFloat(XRNode.RightHand);
 
