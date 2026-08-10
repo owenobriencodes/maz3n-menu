@@ -26,12 +26,16 @@ namespace iiMenu
         public const string GUID = "org.maz3n.gorillatag.maz3nmenu";
         public const string Name = "MAZ3N Menu";
         public const string Description = "MAZ3N Menu -- a fork of ii's Stupid Menu by @crimsoncauldron";
-        public const string BuildTimestamp = "2026-08-10T03:21:48Z";
+        public const string BuildTimestamp = "2026-08-10T15:42:35Z";
         public const string Version = "8.2.4";
 
         public const string BaseDirectory = "MAZ3N Menu";
         public const string ClientResourcePath = "iiMenu.Resources.Client";
-        public const string ServerResourcePath = "https://raw.githubusercontent.com/iiDk-the-actual/iis.Stupid.Menu/master/Resources/Server";
+        // Repointed from iiDk-the-actual/iis.Stupid.Menu (deleted, every fetch 404'd)
+        // to this fork, which carries its own copy of Resources/Server. All ~100
+        // runtime resource fetches -- menu/notification/achievement audio, icons,
+        // PluginLibrary.txt, soundboard list -- resolve from here.
+        public const string ServerResourcePath = "https://raw.githubusercontent.com/owenobriencodes/maz3n-menu/master/Resources/Server";
         public const string ServerAPI = "https://iidk.online"; // Server now closed source due to bad actors :( For any questions, please make an issue on the GitHub repository.
         
         public const string Logo = @"███╗   ███╗ █████╗ ███████╗██████╗ ███╗   ██╗
