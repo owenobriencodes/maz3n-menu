@@ -272,6 +272,26 @@ namespace iiMenu.Menu
                     ControllerInputPoller.instance.rightControllerDevice.TryGetFeatureValue(CommonUsages.primary2DAxisClick, out rightJoystickClick);
                 }
 
+                // Robust joystick fallback, read straight from the XR runtime. The Steam
+                // path above relies on the gorillaTag_*JoystickClick SteamVR actions, which
+                // the current bindings do not bind (joystick-click isn't a gameplay input),
+                // and the non-Steam path relies on ControllerInputPoller's instance device
+                // fields, which can go stale -- either way the joystick menu became
+                // impossible to open or close. Reading InputDevices directly fixes both:
+                // fill the axis if it came back empty, and OR in a real joystick click.
+                UnityEngine.XR.InputDevice xrLeftHand = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+                UnityEngine.XR.InputDevice xrRightHand = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+
+                if (leftJoystick == Vector2.zero)
+                    xrLeftHand.TryGetFeatureValue(CommonUsages.primary2DAxis, out leftJoystick);
+                if (rightJoystick == Vector2.zero)
+                    xrRightHand.TryGetFeatureValue(CommonUsages.primary2DAxis, out rightJoystick);
+
+                if (xrLeftHand.TryGetFeatureValue(CommonUsages.primary2DAxisClick, out bool xrLeftClick) && xrLeftClick)
+                    leftJoystickClick = true;
+                if (xrRightHand.TryGetFeatureValue(CommonUsages.primary2DAxisClick, out bool xrRightClick) && xrRightClick)
+                    rightJoystickClick = true;
+
                 bool arrowKeysPressed = UnityInput.Current.GetKey(KeyCode.UpArrow) || UnityInput.Current.GetKey(KeyCode.DownArrow) || UnityInput.Current.GetKey(KeyCode.LeftArrow) || UnityInput.Current.GetKey(KeyCode.RightArrow);
                 bool leftOverride = UnityInput.Current.GetKey(Settings.pcBindings[Settings.ControllerBinding.LeftOverride]);
                 
