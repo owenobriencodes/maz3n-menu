@@ -6685,7 +6685,9 @@ jgs \_   _/ |Oo\
         public static int buttonClickVolume = 4;
         public static int buttonOffset = 2;
         public static int menuButtonIndex = 1;
-        public static bool toggleButton;
+        // Default on: tap the menu button to toggle, rather than having to hold it.
+        // Keep in sync with the "Menu Toggle Button" ButtonInfo default in Buttons.cs.
+        public static bool toggleButton = true;
         public static bool toggleButtonHeld;
         public static bool toggleButtonActive;
         public static bool keyboardWithToggleButton;

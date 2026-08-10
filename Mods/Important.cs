@@ -701,10 +701,17 @@ exit";
 
             // The 2026-08-07 build made leftValid/rightValid computed read-only
             // properties and dropped leftControllerValid/rightControllerValid.
-            // Forcing hands on now goes through the controller override flags.
-            ConnectedControllerHandler.Instance.overrideEnabled = true;
+            // Forcing hands on now goes through the controller override flags:
+            // overriddenControllers selects which hands are overridden (it is a
+            // flags enum, None=0/Left=1/Right=2) and overrideLeftEnable /
+            // overrideRightEnable are the values forced onto them. Setting the
+            // booleans without the mask -- as an earlier pass did -- overrides
+            // nothing, so name both hands explicitly.
+            ConnectedControllerHandler.Instance.overriddenControllers =
+                OverrideControllers.LeftController | OverrideControllers.RightController;
             ConnectedControllerHandler.Instance.overrideLeftEnable = true;
             ConnectedControllerHandler.Instance.overrideRightEnable = true;
+            ConnectedControllerHandler.Instance.overrideEnabled = true;
         }
 
         private static bool reportMenuToggle;
