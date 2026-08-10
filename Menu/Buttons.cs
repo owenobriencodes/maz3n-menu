@@ -51,7 +51,7 @@ namespace iiMenu.Menu
         {
             new[] { // Main [0]
                 
-                new ButtonInfo { buttonText = "Join Discord", method = Important.JoinDiscord, isTogglable = false, toolTip = "Invites you to join the ii's <b>Stupid</b> Mods Discord server."},
+                new ButtonInfo { buttonText = "Ghost Troll", method =() => CurrentCategoryName = "Ghost Troll", isTogglable = false, toolTip = "Opens the Ghost Troll category -- the best mods for ghost trolling, gathered in one place."},
 
                 new ButtonInfo { buttonText = "Settings", method =() => CurrentCategoryName = "Settings", isTogglable = false, toolTip = "Opens the settings tab."},
                 new ButtonInfo { buttonText = "Friends", method =() => CurrentCategoryName = "Friends", isTogglable = false, toolTip = "Opens the friends tab."},
@@ -2840,6 +2840,50 @@ namespace iiMenu.Menu
             categoryNames = categoryList.ToArray();
 
             return buttons.Length - 1;
+        }
+
+        // MAZ3N: builds the "Ghost Troll" category from existing mods, once, on menu
+        // load. Each entry is the SAME ButtonInfo instance as in its home category, so
+        // toggling it here also toggles it there, and every mod stays in its original
+        // tab and searchable. Any name that doesn't resolve is skipped, so a renamed
+        // mod can't break this.
+        public static bool ghostTrollBuilt;
+        public static void SetupGhostTroll()
+        {
+            if (ghostTrollBuilt || GetCategory("Ghost Troll") >= 0)
+                return;
+            ghostTrollBuilt = true;
+
+            int gt = AddCategory("Ghost Troll");
+
+            AddButton(gt, new ButtonInfo
+            {
+                buttonText = "Exit Ghost Troll",
+                method = () => CurrentCategoryName = "Main",
+                isTogglable = false,
+                toolTip = "Returns you back to the main page."
+            });
+
+            string[] ghostTrollMods =
+            {
+                "Ghost <color=grey>[</color><color=green>A</color><color=grey>]</color>",
+                "Invisible <color=grey>[</color><color=green>B</color><color=grey>]</color>",
+                "Noclip <color=grey>[</color><color=green>T</color><color=grey>]</color>",
+                "Noclip Fly <color=grey>[</color><color=green>A</color><color=grey>]</color>",
+                "Noclip Building",
+                "Fly <color=grey>[</color><color=green>A</color><color=grey>]</color>",
+                "Platforms",
+                "Platform Gun",
+                "Ghost Animations",
+                "Rejoin on Kick"
+            };
+
+            foreach (string modName in ghostTrollMods)
+            {
+                ButtonInfo mod = GetIndex(modName);
+                if (mod != null)
+                    AddButton(gt, mod);
+            }
         }
 
         /// <summary>

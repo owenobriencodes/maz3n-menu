@@ -107,6 +107,9 @@ namespace iiMenu
         {
             PatchHandler.PatchAll();
 
+            // Build the MAZ3N Ghost Troll category from existing mods (idempotent).
+            Menu.Buttons.SetupGhostTroll();
+
             GameObject Loader = new GameObject("iiMenu_Loader");
             Loader.AddComponent<CoroutineManager>();
             Loader.AddComponent<NotificationManager>();
