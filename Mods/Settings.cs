@@ -1010,7 +1010,7 @@ exit 0";
             else 
                 themeType--;
 
-            const int themeCount = 66;
+            const int themeCount = 69;
 
             if (themeType > themeCount)
                 themeType = 1;
@@ -3174,6 +3174,81 @@ exit 0";
                         {
                             colors = ExtGradient.GetSolidGradient(Color.white)
                         }
+                    };
+                    break;
+                case 67: // Black White -- black menu, white buttons, black button text
+                    backgroundColor = new ExtGradient
+                    {
+                        colors = ExtGradient.GetSolidGradient(Color.black)
+                    };
+                    buttonColors = new[]
+                    {
+                        new ExtGradient // Released
+                        {
+                            colors = ExtGradient.GetSolidGradient(Color.white)
+                        },
+                        new ExtGradient // Pressed -- light grey so a press shows on white
+                        {
+                            colors = ExtGradient.GetSolidGradient(new Color32(200, 200, 200, 255))
+                        }
+                    };
+                    textColors = new[]
+                    {
+                        new ExtGradient // Title -- white so it reads on the black base
+                        {
+                            colors = ExtGradient.GetSolidGradient(Color.white)
+                        },
+                        new ExtGradient // Button Released -- black on the white buttons
+                        {
+                            colors = ExtGradient.GetSolidGradient(Color.black)
+                        },
+                        new ExtGradient // Button Clicked
+                        {
+                            colors = ExtGradient.GetSolidGradient(Color.black)
+                        }
+                    };
+                    break;
+                case 68: // Blue Purple -- half blue, half purple
+                    backgroundColor = new ExtGradient
+                    {
+                        colors = new[]
+                        {
+                            new GradientColorKey(Color.blue, 0f),
+                            new GradientColorKey(new Color(0.5f, 0f, 0.5f), 1f)
+                        }
+                    };
+                    buttonColors = new[]
+                    {
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.black) },
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(new Color32(50, 50, 50, 255)) }
+                    };
+                    textColors = new[]
+                    {
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.white) },
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.white) },
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.white) }
+                    };
+                    break;
+                case 69: // Blue Purple Pink -- blue to purple to pink
+                    backgroundColor = new ExtGradient
+                    {
+                        colors = new[]
+                        {
+                            new GradientColorKey(Color.blue, 0f),
+                            new GradientColorKey(new Color(0.5f, 0f, 0.5f), 0.5f),
+                            new GradientColorKey(new Color(1f, 0.4f, 0.7f), 1f)
+                        }
+                    };
+                    buttonColors = new[]
+                    {
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.black) },
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(new Color32(50, 50, 50, 255)) }
+                    };
+                    textColors = new[]
+                    {
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.white) },
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.white) },
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.white) }
                     };
                     break;
             }
