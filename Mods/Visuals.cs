@@ -3188,8 +3188,66 @@ namespace iiMenu.Mods
         {
             foreach (GameObject l in leaves)
                 l.layer = 0;
-            
+
             leaves.Clear();
+        }
+
+        // Client-side leaf recolor. On build 24645815 some forest leaf cards render
+        // the wrong colour on PC GPUs without hardware ASTC support (the texture
+        // decompress fails), so a subset of leaves shows a flat placeholder tint while
+        // the rest stay green. This forces every leaf renderer to one natural green so
+        // they all match again. Purely local -- it only touches this client's copy of
+        // the forest, nothing networked. Reversible via the disable method.
+        public static readonly Color LeafGreen = new Color(0.298f, 0.541f, 0.204f);
+        public static readonly Dictionary<Renderer, Color> leafColorArchive = new Dictionary<Renderer, Color>();
+
+        private static IEnumerable<GameObject> GetLeafObjects()
+        {
+            foreach (string root in new[]
+            {
+                "Environment Objects/LocalObjects_Prefab/Forest",
+                "RankedMain/Ranked_Layout/Ranked_Forest_prefab"
+            })
+            {
+                GameObject rootObject = GetObject(root);
+                if (rootObject == null)
+                    continue;
+
+                for (int i = 0; i < rootObject.transform.childCount; i++)
+                {
+                    GameObject v = rootObject.transform.GetChild(i).gameObject;
+                    if (v.name.Contains(LeavesName))
+                        yield return v;
+                }
+            }
+        }
+
+        public static void EnableFixLeafColor()
+        {
+            foreach (GameObject leaf in GetLeafObjects())
+            {
+                foreach (Renderer renderer in leaf.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (renderer == null)
+                        continue;
+
+                    if (!leafColorArchive.ContainsKey(renderer))
+                        leafColorArchive[renderer] = renderer.material.color;
+
+                    renderer.material.color = LeafGreen;
+                }
+            }
+        }
+
+        public static void DisableFixLeafColor()
+        {
+            foreach (KeyValuePair<Renderer, Color> pair in leafColorArchive)
+            {
+                if (pair.Key != null)
+                    pair.Key.material.color = pair.Value;
+            }
+
+            leafColorArchive.Clear();
         }
 
         public static readonly List<GameObject> cosmetics = new List<GameObject>();
