@@ -1023,35 +1023,35 @@ exit 0";
 
             switch (themeType)
             {
-                case 1: // Orange
+                case 1: // MAZ3N Rainbow -- rainbow base, black buttons, white text (default theme)
                     backgroundColor = new ExtGradient
                     {
-                        colors = ExtGradient.GetSimpleGradient(new Color32(255, 128, 0, 128), new Color32(255, 102, 0, 128))
+                        rainbow = true
                     };
                     buttonColors = new[]
                     {
                         new ExtGradient // Released
                         {
-                            colors = ExtGradient.GetSolidGradient(new Color32(170, 85, 0, 255))
+                            colors = ExtGradient.GetSolidGradient(Color.black)
                         },
-                        new ExtGradient // Pressed
+                        new ExtGradient // Pressed -- near-black so a press is still visible
                         {
-                            colors = ExtGradient.GetSolidGradient(new Color32(85, 42, 0, 255))
+                            colors = ExtGradient.GetSolidGradient(new Color32(50, 50, 50, 255))
                         }
                     };
                     textColors = new[]
                     {
                         new ExtGradient // Title
                         {
-                            colors = ExtGradient.GetSolidGradient(new Color32(255, 190, 125, 255))
+                            colors = ExtGradient.GetSolidGradient(Color.white)
                         },
                         new ExtGradient // Button Released
                         {
-                            colors = ExtGradient.GetSolidGradient(new Color32(255, 190, 125, 255))
+                            colors = ExtGradient.GetSolidGradient(Color.white)
                         },
                         new ExtGradient // Button Clicked
                         {
-                            colors = ExtGradient.GetSolidGradient(new Color32(255, 190, 125, 255))
+                            colors = ExtGradient.GetSolidGradient(Color.white)
                         }
                     };
                     break;
