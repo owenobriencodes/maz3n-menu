@@ -104,7 +104,7 @@ namespace iiMenu.Menu
             new[] { // Menu Settings [2]
                 new ButtonInfo { buttonText = "Exit Menu Settings", method =() => CurrentCategoryName = "Settings", isTogglable = false, toolTip = "Returns you back to the settings menu."},
 
-                new ButtonInfo { buttonText = "Menu Colors", overlapText = "Menu Colors <color=grey>[</color><color=green>Rainbow</color><color=grey>]</color>", method =() => Settings.ChangeMenuColors(), enableMethod =() => Settings.ChangeMenuColors(), disableMethod =() => Settings.ChangeMenuColors(false), incremental = true, isTogglable = false, toolTip = "Changes the menu's color. Cycles: Rainbow, Blue, Purple, Pink, Red, Black, Gray, Yellow, Dark Blue, Dark Yellow."},
+                new ButtonInfo { buttonText = "Menu Colors", overlapText = "Menu Colors <color=grey>[</color><color=green>Rainbow</color><color=grey>]</color>", method =() => Settings.ChangeMenuColors(), enableMethod =() => Settings.ChangeMenuColors(), disableMethod =() => Settings.ChangeMenuColors(false), incremental = true, isTogglable = false, toolTip = "Changes the menu's color. Cycles: Rainbow, Blue, Purple, Pink, Red, Black, Gray, Yellow, Dark Blue, Dark Yellow, Blue Purple Pink, Black Gray Red."},
 
                 new ButtonInfo { buttonText = "Right Hand", enableMethod = Settings.RightHand, disableMethod = Settings.LeftHand, toolTip = "Puts the menu on your right hand."},
                 new ButtonInfo { buttonText = "Both Hands", enableMethod =() => bothHands = true, disableMethod =() => bothHands = false, toolTip = "Puts the menu on your both of your hands."},

@@ -1004,20 +1004,80 @@ exit 0";
 
         // I know there's better ways to do this. Trust me.
         // Simple menu-color picker (the first option in Menu Settings). Cycles the menu through a
-        // fixed set of colors instead of the 69 full themes, with Rainbow kept as one choice.
+        // fixed set of colors instead of the 71 full themes, with Rainbow kept as one choice.
         private static int menuColorIndex;
-        private static readonly (string name, Color color, bool rainbow)[] menuColorOptions =
+
+        // One step of the picker. Defaults reproduce the original behaviour: a flat base color
+        // with black buttons and white text. Set gradient for a multi-color base (it wins over
+        // color), and button/text/title to give an option its own scheme.
+        private sealed class MenuColorOption
         {
-            ("Rainbow", Color.white, true),
-            ("Blue", Color.blue, false),
-            ("Purple", new Color(0.5f, 0f, 0.6f), false),
-            ("Pink", new Color(1f, 0.45f, 0.75f), false),
-            ("Red", Color.red, false),
-            ("Black", Color.black, false),
-            ("Gray", Color.gray, false),
-            ("Yellow", Color.yellow, false),
-            ("Dark Blue", new Color(0f, 0f, 0.45f), false),
-            ("Dark Yellow", new Color(0.55f, 0.55f, 0f), false),
+            public string name;
+            public Color color = Color.white;
+            public bool rainbow;
+
+            public GradientColorKey[] gradient;
+
+            public Color button = Color.black;
+            public Color buttonPressed = new Color32(50, 50, 50, 255);
+
+            public Color text = Color.white;
+            public Color title = Color.white;
+        }
+
+        // Gradient bases are mirrored (they end on the color they start with) so the animated
+        // fade loops smoothly instead of snapping back at the end of the cycle.
+        private static readonly MenuColorOption[] menuColorOptions =
+        {
+            new MenuColorOption { name = "Rainbow", rainbow = true },
+            new MenuColorOption { name = "Blue", color = Color.blue },
+            new MenuColorOption { name = "Purple", color = new Color(0.5f, 0f, 0.6f) },
+            new MenuColorOption { name = "Pink", color = new Color(1f, 0.45f, 0.75f) },
+            new MenuColorOption { name = "Red", color = Color.red },
+            new MenuColorOption { name = "Black", color = Color.black },
+            new MenuColorOption { name = "Gray", color = Color.gray },
+            new MenuColorOption { name = "Yellow", color = Color.yellow },
+            new MenuColorOption { name = "Dark Blue", color = new Color(0f, 0f, 0.45f) },
+            new MenuColorOption { name = "Dark Yellow", color = new Color(0.55f, 0.55f, 0f) },
+            new MenuColorOption
+            {
+                // Half blue, then purple, then pink. Black buttons with pink writing -- black text
+                // was asked for too, but it would be invisible on the black buttons, so the pink
+                // half of that is what actually renders.
+                name = "Blue Purple Pink",
+                gradient = new[]
+                {
+                    new GradientColorKey(new Color(0.15f, 0.35f, 1f), 0f),
+                    new GradientColorKey(new Color(0.15f, 0.35f, 1f), 0.25f),
+                    new GradientColorKey(new Color(0.55f, 0.2f, 0.85f), 0.4f),
+                    new GradientColorKey(new Color(1f, 0.35f, 0.75f), 0.5f),
+                    new GradientColorKey(new Color(0.55f, 0.2f, 0.85f), 0.6f),
+                    new GradientColorKey(new Color(0.15f, 0.35f, 1f), 0.75f),
+                    new GradientColorKey(new Color(0.15f, 0.35f, 1f), 1f)
+                },
+                text = new Color(1f, 0.45f, 0.8f),
+                title = new Color(1f, 0.45f, 0.8f)
+            },
+            new MenuColorOption
+            {
+                // Black and gray base with a small band of red through the middle, orange buttons,
+                // red writing. Button text is a deep red so it still reads against the orange.
+                name = "Black Gray Red",
+                gradient = new[]
+                {
+                    new GradientColorKey(Color.black, 0f),
+                    new GradientColorKey(new Color(0.25f, 0.25f, 0.25f), 0.35f),
+                    new GradientColorKey(new Color(0.45f, 0.45f, 0.45f), 0.46f),
+                    new GradientColorKey(new Color(0.5f, 0.05f, 0.05f), 0.5f),
+                    new GradientColorKey(new Color(0.45f, 0.45f, 0.45f), 0.54f),
+                    new GradientColorKey(new Color(0.25f, 0.25f, 0.25f), 0.65f),
+                    new GradientColorKey(Color.black, 1f)
+                },
+                button = new Color(1f, 0.5f, 0.05f),
+                buttonPressed = new Color(0.65f, 0.3f, 0f),
+                text = new Color(0.45f, 0f, 0f),
+                title = new Color(1f, 0.15f, 0.15f)
+            },
         };
 
         public static void ChangeMenuColors(bool increment = true)
@@ -1029,29 +1089,38 @@ exit 0";
 
             menuColorIndex = ((menuColorIndex % menuColorOptions.Length) + menuColorOptions.Length) % menuColorOptions.Length;
 
-            (string name, Color color, bool rainbow) option = menuColorOptions[menuColorIndex];
+            MenuColorOption option = menuColorOptions[menuColorIndex];
 
             // A custom theme would override this, so turn it off first.
             ButtonInfo customTheme = Buttons.GetIndex("Custom Menu Theme");
             if (customTheme != null && customTheme.enabled)
                 customTheme.enabled = false;
 
-            backgroundColor = option.rainbow
-                ? new ExtGradient { rainbow = true }
-                : new ExtGradient { colors = ExtGradient.GetSolidGradient(option.color) };
+            if (option.rainbow)
+                backgroundColor = new ExtGradient { rainbow = true };
+            else
+                backgroundColor = new ExtGradient
+                {
+                    // Copy the keys -- the color pickers write into backgroundColor.colors in
+                    // place, which would otherwise permanently edit the preset in menuColorOptions.
+                    colors = option.gradient == null
+                        ? ExtGradient.GetSolidGradient(option.color)
+                        : option.gradient.Select(key => new GradientColorKey(key.color, key.time)).ToArray()
+                };
 
-            // Black buttons, white text -- the same readable scheme as the default theme. On very
-            // dark colors the button faces blend into the background, but the white text keeps it legible.
+            // Most options keep black buttons and white text -- the same readable scheme as the
+            // default theme. On very dark colors the button faces blend into the background, but
+            // the text color keeps it legible.
             buttonColors = new[]
             {
-                new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.black) },
-                new ExtGradient { colors = ExtGradient.GetSolidGradient(new Color32(50, 50, 50, 255)) }
+                new ExtGradient { colors = ExtGradient.GetSolidGradient(option.button) }, // Released
+                new ExtGradient { colors = ExtGradient.GetSolidGradient(option.buttonPressed) } // Pressed
             };
             textColors = new[]
             {
-                new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.white) },
-                new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.white) },
-                new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.white) }
+                new ExtGradient { colors = ExtGradient.GetSolidGradient(option.title) }, // Title
+                new ExtGradient { colors = ExtGradient.GetSolidGradient(option.text) }, // Button Released
+                new ExtGradient { colors = ExtGradient.GetSolidGradient(option.text) } // Button Clicked
             };
 
             ButtonInfo self = Buttons.GetIndex("Menu Colors");
@@ -1066,7 +1135,7 @@ exit 0";
             else 
                 themeType--;
 
-            const int themeCount = 69;
+            const int themeCount = 71;
 
             if (themeType > themeCount)
                 themeType = 1;
@@ -3305,6 +3374,58 @@ exit 0";
                         new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.white) },
                         new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.white) },
                         new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.white) }
+                    };
+                    break;
+                case 70: // Blue Purple Pink Text -- same base as the Menu Colors option, pink writing
+                    backgroundColor = new ExtGradient
+                    {
+                        colors = new[]
+                        {
+                            new GradientColorKey(new Color(0.15f, 0.35f, 1f), 0f),
+                            new GradientColorKey(new Color(0.15f, 0.35f, 1f), 0.25f),
+                            new GradientColorKey(new Color(0.55f, 0.2f, 0.85f), 0.4f),
+                            new GradientColorKey(new Color(1f, 0.35f, 0.75f), 0.5f),
+                            new GradientColorKey(new Color(0.55f, 0.2f, 0.85f), 0.6f),
+                            new GradientColorKey(new Color(0.15f, 0.35f, 1f), 0.75f),
+                            new GradientColorKey(new Color(0.15f, 0.35f, 1f), 1f)
+                        }
+                    };
+                    buttonColors = new[]
+                    {
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.black) },
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(new Color32(50, 50, 50, 255)) }
+                    };
+                    textColors = new[]
+                    {
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(new Color(1f, 0.45f, 0.8f)) },
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(new Color(1f, 0.45f, 0.8f)) },
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(new Color(1f, 0.45f, 0.8f)) }
+                    };
+                    break;
+                case 71: // Black Gray Red -- black/gray base with a red band, orange buttons, red writing
+                    backgroundColor = new ExtGradient
+                    {
+                        colors = new[]
+                        {
+                            new GradientColorKey(Color.black, 0f),
+                            new GradientColorKey(new Color(0.25f, 0.25f, 0.25f), 0.35f),
+                            new GradientColorKey(new Color(0.45f, 0.45f, 0.45f), 0.46f),
+                            new GradientColorKey(new Color(0.5f, 0.05f, 0.05f), 0.5f),
+                            new GradientColorKey(new Color(0.45f, 0.45f, 0.45f), 0.54f),
+                            new GradientColorKey(new Color(0.25f, 0.25f, 0.25f), 0.65f),
+                            new GradientColorKey(Color.black, 1f)
+                        }
+                    };
+                    buttonColors = new[]
+                    {
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(new Color(1f, 0.5f, 0.05f)) },
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(new Color(0.65f, 0.3f, 0f)) }
+                    };
+                    textColors = new[]
+                    {
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(new Color(1f, 0.15f, 0.15f)) }, // Title -- bright red on the dark base
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(new Color(0.45f, 0f, 0f)) }, // Deep red so it reads on orange
+                        new ExtGradient { colors = ExtGradient.GetSolidGradient(new Color(0.45f, 0f, 0f)) }
                     };
                     break;
             }
