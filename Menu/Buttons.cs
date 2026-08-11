@@ -104,6 +104,8 @@ namespace iiMenu.Menu
             new[] { // Menu Settings [2]
                 new ButtonInfo { buttonText = "Exit Menu Settings", method =() => CurrentCategoryName = "Settings", isTogglable = false, toolTip = "Returns you back to the settings menu."},
 
+                new ButtonInfo { buttonText = "Menu Colors", overlapText = "Menu Colors <color=grey>[</color><color=green>Rainbow</color><color=grey>]</color>", method =() => Settings.ChangeMenuColors(), enableMethod =() => Settings.ChangeMenuColors(), disableMethod =() => Settings.ChangeMenuColors(false), incremental = true, isTogglable = false, toolTip = "Changes the menu's color. Cycles: Rainbow, Blue, Purple, Pink, Red, Black, Gray, Yellow, Dark Blue, Dark Yellow."},
+
                 new ButtonInfo { buttonText = "Right Hand", enableMethod = Settings.RightHand, disableMethod = Settings.LeftHand, toolTip = "Puts the menu on your right hand."},
                 new ButtonInfo { buttonText = "Both Hands", enableMethod =() => bothHands = true, disableMethod =() => bothHands = false, toolTip = "Puts the menu on your both of your hands."},
 
@@ -265,7 +267,7 @@ namespace iiMenu.Menu
                 new ButtonInfo { buttonText = "Disable Page Number", enableMethod =() => noPageNumber = true, disableMethod =() => noPageNumber = false, toolTip = "Disables the current page number in the title text."},
                 new ButtonInfo { buttonText = "Disable FPS Counter", enableMethod =() => disableFpsCounter = true, disableMethod =() => disableFpsCounter = false, toolTip = "Disables the FPS counter."},
                 new ButtonInfo { buttonText = "Disable Drop Menu", enableMethod =() => dropOnRemove = false, disableMethod =() => dropOnRemove = true, toolTip = "Makes the menu despawn instead of falling."},
-                new ButtonInfo { buttonText = "Disable Board Colors", overlapText = "Disable Custom Boards", enableMethod =() => CustomBoardManager.CustomBoardsEnabled = false, disableMethod =() => CustomBoardManager.CustomBoardsEnabled = true, toolTip = "Disables the board colors to look legitimate on screen share."},
+                new ButtonInfo { buttonText = "Custom Boards", enableMethod =() => CustomBoardManager.CustomBoardsEnabled = true, disableMethod =() => CustomBoardManager.CustomBoardsEnabled = false, toolTip = "Replaces the in-game leaderboard with a custom menu board. OFF by default -- while off you see the normal leaderboard with all players and their report/mute buttons. Only turn this on if you want the menu board instead."},
                 new ButtonInfo { buttonText = "Disable Custom Text Colors", enableMethod =() => CustomBoardManager.CustomBoardTextEnabled = false, disableMethod =() => CustomBoardManager.CustomBoardTextEnabled = true, toolTip = "Disables the text colors on the boards to make them match their original theme."},
                 new ButtonInfo { buttonText = "Custom Board Fonts", enableMethod =() => CustomBoardManager.CustomBoardFonts = true, disableMethod =() => CustomBoardManager.CustomBoardFonts = false, toolTip = "Applies the menu's font to the boards."},
 
@@ -500,6 +502,7 @@ namespace iiMenu.Menu
                 new ButtonInfo { buttonText = "30 FPS", method =() => Important.CapFPS(30), toolTip = "Caps your FPS at 30 frames per second."},
                 new ButtonInfo { buttonText = "15 FPS", method =() => Important.CapFPS(15), toolTip = "Caps your FPS at 15 frames per second."},
                 new ButtonInfo { buttonText = "Unlock FPS", method = Important.UncapFPS, disableMethod =() => Application.targetFrameRate = 144, toolTip = "Unlocks your FPS."},
+                new ButtonInfo { buttonText = "Reload Game Audio", method = Important.ReloadGameAudio, isTogglable = false, toolTip = "Fixes missing game audio (footsteps, menu clicks) by making the game re-grab your current audio device. Use this if the game goes silent over Steam Link."},
 
                 new ButtonInfo { buttonText = "PC Button Click", method = Important.PCButtonClick, disableMethod = Important.DisablePCButtonClick, toolTip = "Lets you click in-game buttons with your mouse."},
                 new ButtonInfo { buttonText = "PC Controller Emulation", method = Important.PCControllerEmulation, toolTip = "Allows you to press buttons on your in-game controllers using your keyboard."},
@@ -631,6 +634,7 @@ namespace iiMenu.Menu
                 new ButtonInfo { buttonText = "Size Changer", method = Movement.SizeChanger, enableMethod = Movement.DisableSizeChanger, disableMethod = Movement.DisableSizeChanger, toolTip = "Increase your size by holding <color=green>trigger</color>, and decrease your size by holding <color=green>grip</color>."},
 
                 new ButtonInfo { buttonText = "Auto Walk <color=grey>[</color><color=green>J</color><color=grey>]</color>", method = Movement.AutoWalk, toolTip = "Makes your character automatically walk when using the <color=green>joystick</color>."},
+                new ButtonInfo { buttonText = "Walk Sim", method = Movement.WalkSim, toolTip = "Walk around by pushing your <color=green>right joystick</color>, like a walking simulator. Keeps gravity so you stay grounded."},
                 new ButtonInfo { buttonText = "Auto Funny Run <color=grey>[</color><color=green>G</color><color=grey>]</color>", method = Movement.AutoFunnyRun, toolTip = "Makes your character automatically funny run when holding <color=green>grip</color>."},
                 new ButtonInfo { buttonText = "Auto Pinch Climb <color=grey>[</color><color=green>G</color><color=grey>]</color>", method = Movement.AutoPinchClimb, toolTip = "Makes your character automatically pinch climb when holding <color=green>grip</color>."},
                 new ButtonInfo { buttonText = "Auto Elevator Climb <color=grey>[</color><color=green>G</color><color=grey>]</color>", method = Movement.AutoElevatorClimb, toolTip = "Makes your character automatically elevator climb when holding <color=green>grip</color>."},
@@ -898,7 +902,7 @@ namespace iiMenu.Menu
                 new ButtonInfo { buttonText = "Info Watch", enableMethod = Visuals.WatchOn, method = Visuals.WatchStep, disableMethod = Visuals.WatchOff, toolTip = "Puts a watch on your hand that tells you the time and your FPS."},
                 new ButtonInfo { buttonText = "Leaderboard Info", enableMethod =() => UpdatePatch.enabled = true, method = Visuals.LeaderboardInfo, disableMethod =() => UpdatePatch.enabled = false, toolTip = "Shows info next to players' names on the leaderboard."},
 
-                new ButtonInfo { buttonText = "FPS Boost", enableMethod =() => QualitySettings.globalTextureMipmapLimit = int.MaxValue, disableMethod =() => QualitySettings.globalTextureMipmapLimit = 1, toolTip = "Makes everything low quality in an attempt to boost your FPS."},
+                new ButtonInfo { buttonText = "FPS Boost", enableMethod =() => QualitySettings.globalTextureMipmapLimit = 2, disableMethod =() => QualitySettings.globalTextureMipmapLimit = 0, toolTip = "Lowers texture quality to boost your FPS. (Was int.MaxValue, which made everything a blurry unreadable mess; now a sane quarter-res, and turning it off fully restores sharpness.)"},
                 new ButtonInfo { buttonText = "Freeze In Background", enableMethod =() => Application.runInBackground = false, disableMethod =() => Application.runInBackground = true, toolTip = "Freezes the game when the application is not focused."},
 
                 new ButtonInfo { buttonText = "Fake Unban Self", method = Visuals.FakeUnbanSelf, isTogglable = false, toolTip = "Makes it appear as if you're not banned." },
@@ -937,7 +941,7 @@ namespace iiMenu.Menu
                 new ButtonInfo { buttonText = "Better Rig Lerping", overlapText = "Better Rig Smoothing", enableMethod =() => PlayerSerializePatch.OnPlayerSerialize += Visuals.BetterRigLerping, disableMethod =() => PlayerSerializePatch.OnPlayerSerialize -= Visuals.BetterRigLerping, toolTip = "Estimates the inbetween positions using a real velocity emulator on the other player's rigs."},
                 new ButtonInfo { buttonText = "Remove Leaves", enableMethod = Visuals.EnableRemoveLeaves, disableMethod = Visuals.DisableRemoveLeaves, toolTip = "Removes leaves on trees, good for branching."},
                 new ButtonInfo { buttonText = "Streamer Remove Leaves", enableMethod = Visuals.EnableStreamerRemoveLeaves, disableMethod = Visuals.DisableStreamerRemoveLeaves, toolTip = "Removes leaves on trees in VR, but not on the camera. Good for streaming."},
-                new ButtonInfo { buttonText = "Fix Leaf Color", enableMethod = Visuals.EnableFixLeafColor, disableMethod = Visuals.DisableFixLeafColor, toolTip = "Forces all forest leaves back to normal green, for when some render the wrong color on PC. Only affects your view."},
+                new ButtonInfo { buttonText = "Fix Leaf Color", enableMethod = Visuals.EnableFixLeafColor, disableMethod = Visuals.DisableFixLeafColor, toolTip = "Repairs forest leaf batches that got repainted with the menu theme, matching them to the game's own leaf material. Only affects your view."},
                 new ButtonInfo { buttonText = "Remove Cosmetics", enableMethod = Visuals.DisableCosmetics, disableMethod = Visuals.EnableCosmetics, toolTip = "Locally toggles off your cosmetics, so you can wear sight-blocking cosmetics such as the eyepatch."},
                 new ButtonInfo { buttonText = "X-Ray <color=grey>[</color><color=green>T</color><color=grey>]</color>", method = Visuals.Xray, toolTip = "Lets you see through objects when holding <color=green>trigger</color>."},
 
@@ -1228,6 +1232,7 @@ namespace iiMenu.Menu
                 new ButtonInfo { buttonText = "Global Hoverboard", method = Fun.GlobalHoverboard, disableMethod = Fun.DisableGlobalHoverboard, toolTip = "Gives you the hoverboard no matter where you are."},
 
                 new ButtonInfo { buttonText = "Black Screen Gun", method =() => Fun.HoverboardScreenGun(Color.black), toolTip = "Uses the hoverboards to blind whoever your hand desires."},
+                new ButtonInfo { buttonText = "Black Screen Gun 2", method = Fun.BlackScreenGun2, disableMethod =() => SerializePatch.OverrideSerialization = null, toolTip = "Point the line at a player and hold -- their screen stays black until you let go. You stay visible and don't teleport."},
                 new ButtonInfo { buttonText = "Black Screen All", method =() => Fun.HoverboardScreenAll(Color.black), disableMethod =() => SerializePatch.OverrideSerialization = null, toolTip = "Uses the hoverboards to blind everyone in the room."},
 
                 new ButtonInfo { buttonText = "White Screen Gun", method =() => Fun.HoverboardScreenGun(Color.white), toolTip = "Uses the hoverboards to make whoever your hand desires' screen white."},
@@ -1992,7 +1997,7 @@ namespace iiMenu.Menu
             new[] { // Overpowered Mods [17]
                 new ButtonInfo { buttonText = "Exit Overpowered Mods", method =() => CurrentCategoryName = "Main", isTogglable = false, toolTip = "Returns you back to the main page."},
 
-                new ButtonInfo { buttonText = "Always Guardian", method = Overpowered.AlwaysGuardian, disableMethod = Movement.EnableRig, toolTip = "Makes you always the guardian."},
+                new ButtonInfo { buttonText = "Always Guardian", method = Overpowered.AlwaysGuardian, disableMethod = Overpowered.DisableAlwaysGuardian, toolTip = "Makes you always the guardian."},
                 new ButtonInfo { buttonText = "Guardian Protector", method = Overpowered.GuardianProtector, toolTip = "Pushes people away from the guardian moon if they try to approach it."},
 
                 new ButtonInfo { buttonText = "Grab Gun", overlapText = "Guardian Grab Gun", method = Overpowered.GrabGun, toolTip = "Grabs whoever your hand desires if you're the guardian."},
@@ -2408,6 +2413,7 @@ namespace iiMenu.Menu
 
                 new ButtonInfo { buttonText = "Change Lag Power", overlapText = "Change Lag Power <color=grey>[</color><color=green>Heavy</color><color=grey>]</color>", method =() => Overpowered.ChangeLagPower(), enableMethod =() => Overpowered.ChangeLagPower(), disableMethod =() => Overpowered.ChangeLagPower(false), incremental = true, isTogglable = false, toolTip = "Changes the power of the lag mods." },
                 new ButtonInfo { buttonText = "Change Lag Type", overlapText = "Change Lag Type <color=grey>[</color><color=green>Party</color><color=grey>]</color>", method =() => Overpowered.ChangeLagType(), enableMethod =() => Overpowered.ChangeLagType(), disableMethod =() => Overpowered.ChangeLagType(false), incremental = true, isTogglable = false, toolTip = "Changes the method used to lag players." },
+                new ButtonInfo { buttonText = "Burst Lag", enableMethod =() => Overpowered.lagSustained = false, disableMethod =() => Overpowered.lagSustained = true, toolTip = "Switches lag to big freeze-spike bursts. Off (default) = sustained, which keeps the target's FPS low the whole time you hold the line on them." },
 
                 new ButtonInfo { buttonText = "Master Visualization Type", overlapText = "Master Visualization Type <color=grey>[</color><color=green>Sphere</color><color=grey>]</color>", method =() => Overpowered.MasterVisualizationType(), enableMethod =() => Overpowered.MasterVisualizationType(), disableMethod =() => Overpowered.MasterVisualizationType(false), incremental = true, isTogglable = false, toolTip = "Changes the indicator placed on the master client for mods that show one." },
 
@@ -2864,26 +2870,62 @@ namespace iiMenu.Menu
                 toolTip = "Returns you back to the main page."
             });
 
+            // Curated for actual ghost trolling -- the point is to look like the "Hidden" ghost
+            // (white/blank, no cosmetics, blank-ish name) and spook people: appear out of nowhere,
+            // chase and circle a victim, flash their screen, play eerie sounds, then vanish. The
+            // old list was generic movement filler (multiple noclip/platform mods); this replaces it
+            // with the haunting-focused set. Grouped by role. Any name that doesn't resolve is
+            // skipped below, so this can't break if a mod gets renamed.
             string[] ghostTrollMods =
             {
+                // Become the ghost -- identity + ghostly look and movement
+                "Become Hidden on Leaderboard",
                 "Ghost <color=grey>[</color><color=green>A</color><color=grey>]</color>",
-                "Invisible <color=grey>[</color><color=green>B</color><color=grey>]</color>",
-                "Noclip <color=grey>[</color><color=green>T</color><color=grey>]</color>",
-                "Noclip Fly <color=grey>[</color><color=green>A</color><color=grey>]</color>",
-                "Noclip Building",
-                "Fly <color=grey>[</color><color=green>A</color><color=grey>]</color>",
-                "Platforms",
-                "Platform Gun",
                 "Ghost Animations",
+                "Invisible <color=grey>[</color><color=green>B</color><color=grey>]</color>",
+                "Spin Bot",
+
+                // Get to your victim -- appear suddenly and move through walls
+                "Fly <color=grey>[</color><color=green>A</color><color=grey>]</color>",
+                "Noclip <color=grey>[</color><color=green>T</color><color=grey>]</color>",
+                "Speed Boost",
+
+                // Haunt them -- teleport to, chase, and circle players
+                "Bees",
+                "Follow Player Gun",
+                "Orbit Player Gun",
+
+                // Scare them -- screen flash and eerie sound
+                "White Screen Gun",
+                "Scream Sound Spam <color=grey>[</color><color=green>G</color><color=grey>]</color>",
+                "Soundboard",
+
+                // Set up the scare -- see victims through walls and time it through their eyes
+                "Chams",
+                "Spectate Gun",
+
+                // Stay in the room after they try to kick you
                 "Rejoin on Kick"
             };
 
+            int added = 0;
+            List<string> missing = new List<string>();
             foreach (string modName in ghostTrollMods)
             {
                 ButtonInfo mod = GetIndex(modName);
                 if (mod != null)
+                {
                     AddButton(gt, mod);
+                    added++;
+                }
+                else
+                    missing.Add(modName);
             }
+
+            // Proof the category populated. In BepInEx/LogOutput.log after launch:
+            // "[GhostTroll] added=16/16 missing=" means every mod resolved; any names after
+            // "missing=" were skipped and need their button text corrected here.
+            LogManager.Log($"[GhostTroll] added={added}/{ghostTrollMods.Length} missing={string.Join(", ", missing)}");
         }
 
         /// <summary>

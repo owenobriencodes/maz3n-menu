@@ -100,6 +100,20 @@ namespace iiMenu.Menu
             timeMenuStarted = Time.time;
             IsSteam = PlayFabAuthenticator.instance.platform;
 
+            // Keep the game rendering AND playing audio even when its window isn't the OS-focused
+            // one. Over Steam Link / remote streaming the focused window is the streamer or desktop,
+            // not the game, so if runInBackground is off the game pauses -> the headset shows a
+            // frozen, reprojected (smeary/blurry) frame and the sound cuts out. Forcing it true here
+            // fixes that. The "Freeze In Background" mod can still deliberately turn it back off.
+            Application.runInBackground = true;
+
+            // "Mouths move but no sound" = audio is produced but silenced at the master output
+            // (volume 0 / paused) or on the wrong device. Restore master volume + device once, a few
+            // seconds after launch, so game audio works without a restart. Also on the "Reload Game
+            // Audio" button.
+            if (CoroutineManager.instance != null)
+                CoroutineManager.instance.StartCoroutine(iiMenu.Mods.Important.AutoRestoreGameAudio());
+
             InitializeFonts();
             activeFont = AgencyFB;
 
@@ -2496,15 +2510,9 @@ namespace iiMenu.Menu
                 textColors[2] = new ExtGradient { colors = ExtGradient.GetSimpleGradient(RandomColor(), RandomColor()) };
             }
 
-            if (themeType == 7)
-            {
-                GameObject coneBackground = LoadObject<GameObject>("Cone");
-
-                coneBackground.transform.parent = menu.transform;
-                coneBackground.transform.localPosition = Vector3.zero;
-                coneBackground.transform.localRotation = Quaternion.Euler(0f, 0f, 0f);
-            }
-            else
+            // themeType 7 used to load a "Cone" prefab as the whole background. It now builds the
+            // normal panel like every other theme and draws a big black "M" on it (added after the
+            // canvas exists, below), so this theme shows the MAZ3N "M" instead of the cone image.
             {
                 menuBackground = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 Destroy(menuBackground.GetComponent<BoxCollider>());
@@ -2760,34 +2768,32 @@ namespace iiMenu.Menu
 
                 if (!disableWatermark)
                 {
-                    watermarkImage = new GameObject
+                    // Back-of-menu logo: a solid black "M" in place of the old white icon watermark.
+                    // Kept static black (no UIColorChanger) so it stays black under every menu theme,
+                    // and placed at the watermark's old spot/rotation so it sits on the back face.
+                    watermarkImage = null;
+
+                    TextMeshPro backLogo = new GameObject
                     {
                         transform =
                         {
                             parent = canvasObj.transform
                         }
-                    }.AddComponent<Image>();
+                    }.AddComponent<TextMeshPro>();
 
-                    if (watermarkMat == null)
-                        watermarkMat = new Material(watermarkImage.material);
+                    backLogo.font = activeFont;
+                    backLogo.text = "M";
+                    backLogo.color = Color.black;
+                    backLogo.richText = false;
+                    backLogo.fontStyle = FontStyles.Bold;
+                    backLogo.alignment = TextAlignmentOptions.Center;
+                    backLogo.enableAutoSizing = false;
+                    backLogo.fontSize = 4f;
 
-                    watermarkImage.material = watermarkMat;
-                    watermarkImage.material.SetTexture("_MainTex", customWatermark ?? LoadTextureFromResource($"{PluginInfo.ClientResourcePath}.icon.png"));
-
-                    RectTransform imageTransform = watermarkImage.GetComponent<RectTransform>();
-                    imageTransform.localPosition = Vector3.zero;
-                    imageTransform.sizeDelta = new Vector2(.15f, .15f);
-
-                    imageTransform.localPosition = new Vector3(0.04f, 0f, 0f);
-
-                    FollowMenuSettings(watermarkImage);
-
-                    imageTransform.localRotation = Quaternion.Euler(new Vector3(0f, 90f, 90f - (rockWatermark ? (Mathf.Sin(Time.time * 2f) * 10f) : 0f)));
-
-                    if (customWatermark == null)
-                        watermarkImage.AddComponent<UIColorChanger>().colors = textColors[0];
-                    else
-                        watermarkImage.material.color = Color.white;
+                    RectTransform backRect = backLogo.GetComponent<RectTransform>();
+                    backRect.localPosition = new Vector3(0.04f, 0f, 0f);
+                    backRect.sizeDelta = new Vector2(0.2f, 0.2f);
+                    backRect.localRotation = Quaternion.Euler(new Vector3(0f, 90f, 90f));
                 }
             }
 

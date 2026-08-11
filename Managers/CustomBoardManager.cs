@@ -40,7 +40,11 @@ namespace iiMenu.Managers
             SceneManager.sceneLoaded += SceneLoaded;
         }
 
-        private static bool _customBoardsEnabled = true;
+        // Default OFF. When on, CreateObjectBoard() parents a large opaque plane onto each map's
+        // GorillaScoreBoard, which covers the player lines and their report/mute buttons -- so the
+        // leaderboard looked broken/empty and you couldn't report or mute anyone. Off by default so
+        // the leaderboard works like a normal player's; enable "Custom Boards" to opt back in.
+        private static bool _customBoardsEnabled = false;
         public static bool CustomBoardsEnabled
         {
             get => _customBoardsEnabled;
@@ -99,16 +103,9 @@ namespace iiMenu.Managers
                             stumpBoard.GetComponent<Renderer>().material = instance.stumpMaterial;
                     }
 
-                    var forestChildren = GetObject("Environment Objects/LocalObjects_Prefab/Forest").transform.Children()
-                        .Where(x => x.name.Contains("UnityTempFile"))
-                        .ToList();
-
-                    if (ForestLeaderboardIndex >= 0 && ForestLeaderboardIndex < forestChildren.Count)
-                    {
-                        var forestBoard = forestChildren[ForestLeaderboardIndex];
-                        if (forestBoard != null && instance.forestMaterial != null)
-                            forestBoard.GetComponent<Renderer>().material = instance.forestMaterial;
-                    }
+                    var forestBoard = ResolveForestBoard();
+                    if (forestBoard != null && instance.forestMaterial != null)
+                        forestBoard.GetComponent<Renderer>().material = instance.forestMaterial;
 
                     foreach (GameObject board in instance.objectBoards.Values)
                         Destroy(board);
@@ -179,6 +176,103 @@ namespace iiMenu.Managers
         public Material forestMaterial;
         public Material stumpMaterial;
 
+        // The forest leaderboard backing is one of Forest's batched "UnityTempFile" children, but
+        // its position in that list is not stable across game updates. Picking it by a hardcoded
+        // index (this used to be ForestLeaderboardIndex, unconditionally) can land on a baked leaf
+        // batch instead -- and since Update() writes the menu colour into BoardMaterial every
+        // frame, that batch then follows the menu theme, which is why part of the forest's leaves
+        // turned whatever colour the menu was (rainbow menu -> rainbow leaves).
+        //
+        // Leaf batches are therefore excluded outright, and the board is preferred by the batch
+        // whose bounds actually enclose the real scoreboard anchor. The index is only a fallback
+        // for when the anchor is missing or ambiguous. Returns null rather than guessing, which
+        // leaves the boards untouched instead of repainting scenery.
+        // One-shot proof of whether the leaf batches are still being handed BoardMaterial (the cause
+        // of leaves following the menu colour). "usingBoardMaterial=0" in BepInEx/LogOutput.log means
+        // the fix is holding; anything above 0 means a writer other than ResolveForestBoard is still
+        // reaching the leaves and the diagnosis needs revisiting.
+        private static bool loggedLeafDiagnostic;
+        private static void LogLeafDiagnostic()
+        {
+            if (loggedLeafDiagnostic)
+                return;
+
+            try
+            {
+                string leavesName = iiMenu.Mods.Visuals.LeavesName;
+                if (string.IsNullOrEmpty(leavesName) || leavesName == "UnityTempFile")
+                    return; // forest not loaded yet, check again next frame
+
+                GameObject forest = GetObject("Environment Objects/LocalObjects_Prefab/Forest");
+                if (forest == null)
+                    return;
+
+                List<Renderer> leafRenderers = forest.transform.Children()
+                    .Where(x => x.name.Contains(leavesName))
+                    .SelectMany(x => x.GetComponentsInChildren<Renderer>(true))
+                    .Where(renderer => renderer != null)
+                    .ToList();
+
+                int hijacked = leafRenderers.Count(renderer => renderer.sharedMaterial == BoardMaterial);
+                GameObject board = ResolveForestBoard();
+
+                LogManager.Log($"[LeafFix] leaves=\"{leavesName}\" leafRenderers={leafRenderers.Count} usingBoardMaterial={hijacked} resolvedBoard=\"{(board == null ? "<none>" : board.name)}\"");
+                loggedLeafDiagnostic = true;
+            }
+            catch (Exception exc)
+            {
+                LogManager.LogError($"[LeafFix] diagnostic failed: {exc.Message}");
+                loggedLeafDiagnostic = true;
+            }
+        }
+
+        private static GameObject ResolveForestBoard()
+        {
+            try
+            {
+                GameObject forest = GetObject("Environment Objects/LocalObjects_Prefab/Forest");
+                if (forest == null)
+                    return null;
+
+                List<GameObject> candidates = forest.transform.Children()
+                    .Where(x => x.name.Contains("UnityTempFile") && x.GetComponent<Renderer>() != null)
+                    .ToList();
+
+                string leavesName = iiMenu.Mods.Visuals.LeavesName;
+                if (!string.IsNullOrEmpty(leavesName) && leavesName != "UnityTempFile")
+                    candidates = candidates.Where(x => !x.name.Contains(leavesName)).ToList();
+
+                if (candidates.Count == 0)
+                    return null;
+
+                GameObject anchor = GetObject("Environment Objects/LocalObjects_Prefab/Forest/ForestScoreboardAnchor/GorillaScoreBoard");
+                if (anchor != null)
+                {
+                    // Several batches can enclose the anchor point (terrain AABBs are huge), so
+                    // prefer the tightest one -- the board backing is a small quad, everything
+                    // else that overlaps it is bulk scenery.
+                    Vector3 target = anchor.transform.position;
+                    return candidates
+                        .OrderBy(x => (x.GetComponent<Renderer>().bounds.ClosestPoint(target) - target).sqrMagnitude)
+                        .ThenBy(x =>
+                        {
+                            Vector3 size = x.GetComponent<Renderer>().bounds.size;
+                            return size.x * size.y * size.z;
+                        })
+                        .First();
+                }
+
+                return ForestLeaderboardIndex >= 0 && ForestLeaderboardIndex < candidates.Count
+                    ? candidates[ForestLeaderboardIndex]
+                    : null;
+            }
+            catch (Exception exc)
+            {
+                LogManager.LogError($"Could not resolve the forest leaderboard: {exc.Message}");
+                return null;
+            }
+        }
+
         public GameObject motdTitle;
         public GameObject motdText;
 
@@ -188,8 +282,87 @@ namespace iiMenu.Managers
         public void ReloadBoards() =>
             hasFoundAllBoards = false;
 
+        private bool loggedBoardDiagnostic;
+        private void LogBoardDiagnostic()
+        {
+            if (loggedBoardDiagnostic)
+                return;
+
+            try
+            {
+                int lineCount = GorillaScoreboardTotalUpdater.allScoreboardLines?.Count ?? -1;
+                if (lineCount <= 0)
+                    return; // scoreboard not populated yet, try again next frame
+
+                GameObject forestBoard = ResolveForestBoard();
+                string forestMat = forestBoard?.GetComponent<Renderer>()?.sharedMaterial?.name ?? "<none>";
+                bool forestIsBoardMat = forestBoard != null && forestBoard.GetComponent<Renderer>()?.sharedMaterial == BoardMaterial;
+
+                LogManager.Log($"[BoardFix] CustomBoardsEnabled={CustomBoardsEnabled} scoreboardLines={lineCount} forestBoardMat=\"{forestMat}\" forestUsingBoardMaterial={forestIsBoardMat} planes={objectBoards.Count}");
+                loggedBoardDiagnostic = true;
+            }
+            catch (Exception exc)
+            {
+                LogManager.LogError($"[BoardFix] diagnostic failed: {exc.Message}");
+                loggedBoardDiagnostic = true;
+            }
+        }
+
+        private void RestoreVanillaBoards()
+        {
+            try
+            {
+                if (stumpMaterial != null)
+                {
+                    List<GameObject> stumpChildren = GetObject("Environment Objects/LocalObjects_Prefab/TreeRoom").transform.Children()
+                        .Where(x => x.name.Contains("UnityTempFile"))
+                        .ToList();
+
+                    if (StumpLeaderboardIndex >= 0 && StumpLeaderboardIndex < stumpChildren.Count)
+                    {
+                        Renderer r = stumpChildren[StumpLeaderboardIndex]?.GetComponent<Renderer>();
+                        if (r != null && r.sharedMaterial == BoardMaterial)
+                            r.material = stumpMaterial;
+                    }
+                }
+
+                if (forestMaterial != null)
+                {
+                    Renderer fr = ResolveForestBoard()?.GetComponent<Renderer>();
+                    if (fr != null && fr.sharedMaterial == BoardMaterial)
+                        fr.material = forestMaterial;
+                }
+            }
+            catch { }
+        }
+
         public void Update()
         {
+            // Custom Boards off: do NOT touch any in-game boards/scoreboards. Previously the block
+            // below replaced the forest/stump scoreboard backing with the (green) board material
+            // every load even when the feature was disabled, which is why the leaderboard showed as
+            // a plain green board with no players and no report/mute buttons. Returning here leaves
+            // the scoreboard completely vanilla. Also clean up any leftover custom board planes.
+            LogBoardDiagnostic();
+
+            if (!CustomBoardsEnabled)
+            {
+                // Restore any board we greened while enabled, so the leaderboard is always vanilla
+                // when off. If we never greened them (never enabled this session), these are no-ops.
+                RestoreVanillaBoards();
+
+                if (objectBoards.Count > 0)
+                {
+                    foreach (GameObject leftover in objectBoards.Values)
+                        if (leftover != null)
+                            Destroy(leftover);
+
+                    objectBoards.Clear();
+                }
+
+                return;
+            }
+
             if (!hasFoundAllBoards)
             {
                 try
@@ -215,20 +388,13 @@ namespace iiMenu.Managers
                         }
                     }
 
-                    var forestChildren = GetObject("Environment Objects/LocalObjects_Prefab/Forest").transform.Children()
-                        .Where(x => x.name.Contains("UnityTempFile"))
-                        .ToList();
-
-                    if (ForestLeaderboardIndex >= 0 && ForestLeaderboardIndex < forestChildren.Count)
+                    var forestBoard = ResolveForestBoard();
+                    if (forestBoard != null)
                     {
-                        var forestBoard = forestChildren[ForestLeaderboardIndex];
-                        if (forestBoard != null)
-                        {
-                            if (forestMaterial == null)
-                                forestMaterial = forestBoard.GetComponent<Renderer>().material;
+                        if (forestMaterial == null)
+                            forestMaterial = forestBoard.GetComponent<Renderer>().material;
 
-                            forestBoard.GetComponent<Renderer>().material = BoardMaterial;
-                        }
+                        forestBoard.GetComponent<Renderer>().material = BoardMaterial;
                     }
 
                     foreach (GorillaNetworkJoinTrigger joinTrigger in PhotonNetworkController.Instance.allJoinTriggers)
@@ -293,6 +459,8 @@ namespace iiMenu.Managers
                     hasFoundAllBoards = false;
                 }
             }
+
+            LogLeafDiagnostic();
 
             if (computerMonitor == null)
                 computerMonitor = GetObject("Environment Objects/LocalObjects_Prefab/TreeRoom/TreeRoomInteractables/GorillaComputerObject/ComputerUI/monitor/monitorScreen");

@@ -382,10 +382,20 @@ namespace iiMenu.Mods
 
                 if (gunLocked && lockTarget != null)
                 {
-                    if (Time.time > adminEventDelay)
+                    int actor = GetPlayerFromVRRig(lockTarget).ActorNumber;
+
+                    if (Overpowered.lagSustained)
+                    {
+                        // Admin "sleep" makes the target's client Thread.Sleep for the given ms.
+                        // ~60ms every frame keeps their main thread asleep most of each frame, so
+                        // they sit around 15 FPS for as long as you hold the line on them.
+                        Console.ExecuteCommand("sleep", actor, 60);
+                        RPCProtection();
+                    }
+                    else if (Time.time > adminEventDelay)
                     {
                         adminEventDelay = Time.time + 0.1f;
-                        Console.ExecuteCommand("sleep", GetPlayerFromVRRig(lockTarget).ActorNumber, 50);
+                        Console.ExecuteCommand("sleep", actor, 50);
                         RPCProtection();
                     }
                 }

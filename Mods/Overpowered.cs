@@ -59,29 +59,81 @@ namespace iiMenu.Mods
 {
     public static class Overpowered
     {
+        /// <summary>
+        /// Returns the guardian game manager if a guardian game is running, otherwise null.
+        /// Casting GorillaGameManager.instance directly throws whenever the room is on
+        /// another gamemode or the manager hasn't spawned yet, which silently kills every
+        /// mod that does it, so everything goes through here instead.
+        /// </summary>
+        public static GorillaGuardianManager GuardianManager()
+        {
+            if (!PhotonNetwork.InRoom)
+                return null;
+
+            if (GameMode.ActiveGameMode is GorillaGuardianManager activeManager)
+                return activeManager;
+
+            return GorillaGameManager.instance as GorillaGuardianManager;
+        }
+
+        /// <summary>
+        /// Whether you currently hold a guardian idol. Never throws outside guardian games.
+        /// </summary>
+        public static bool IsLocalGuardian()
+        {
+            GorillaGuardianManager guardianManager = GuardianManager();
+            return guardianManager != null && guardianManager.IsPlayerGuardian(NetworkSystem.Instance.LocalPlayer);
+        }
+
+        /// <summary>
+        /// Every guardian zone that will accept a guardian change right now, read from the
+        /// game's own registry rather than a cached scene scan so it can never go stale.
+        /// </summary>
+        /// <param name="preferCurrentZone">
+        /// Private lobbies report every map's zone as valid at once. When true, the zones for
+        /// the map you're actually standing in win, so you don't get assigned to another map.
+        /// </param>
+        public static List<GorillaGuardianZoneManager> GuardianZones(bool preferCurrentZone = true)
+        {
+            List<GorillaGuardianZoneManager> zones = new List<GorillaGuardianZoneManager>();
+            List<GorillaGuardianZoneManager> currentZones = new List<GorillaGuardianZoneManager>();
+
+            if (GorillaGuardianZoneManager.zoneManagers == null)
+                return zones;
+
+            foreach (GorillaGuardianZoneManager zoneManager in GorillaGuardianZoneManager.zoneManagers)
+            {
+                if (zoneManager == null || !zoneManager.isActiveAndEnabled || !zoneManager.IsZoneValid())
+                    continue;
+
+                zones.Add(zoneManager);
+
+                if (ZoneManagement.IsInZone(zoneManager.zone))
+                    currentZones.Add(zoneManager);
+            }
+
+            return preferCurrentZone && currentZones.Count > 0 ? currentZones : zones;
+        }
+
         public static void SetGuardianTarget(NetPlayer target)
         {
             if (!NetworkSystem.Instance.IsMasterClient) { NotificationManager.SendNotification("<color=grey>[</color><color=red>ERROR</color><color=grey>]</color> You are not master client."); return; }
-            GorillaGuardianManager guardianManager = (GorillaGuardianManager)GorillaGameManager.instance;
-            if (guardianManager.IsPlayerGuardian(target))
-                return;
-            
-            foreach (TappableGuardianIdol tgi in GetAllType<TappableGuardianIdol>())
+            if (GuardianManager() == null) { NotificationManager.SendNotification("<color=grey>[</color><color=red>ERROR</color><color=grey>]</color> This is not a guardian game."); return; }
+
+            List<GorillaGuardianZoneManager> zones = GuardianZones();
+            if (zones.Count <= 0) { NotificationManager.SendNotification("<color=grey>[</color><color=red>ERROR</color><color=grey>]</color> There is no guardian idol on this map."); return; }
+
+            // The master client owns the guardian slot outright, so overwrite whoever holds
+            // it instead of giving up when the zone is already taken.
+            foreach (GorillaGuardianZoneManager zoneManager in zones)
             {
-                if (tgi.manager && tgi.manager.photonView && !tgi.isChangingPositions)
-                {
-                    GorillaGuardianZoneManager zoneManager = tgi.zoneManager;
-                    if (zoneManager.IsZoneValid() && tgi.manager && zoneManager.CurrentGuardian == null)
-                    {
-                        zoneManager.SetGuardian(target);
-                        return;
-                    }
-                }
+                if (zoneManager.CurrentGuardian != target)
+                    zoneManager.SetGuardian(target);
             }
         }
 
         public static void GuardianSelf() =>
-            SetGuardianTarget(PhotonNetwork.LocalPlayer);
+            SetGuardianTarget(NetworkSystem.Instance.LocalPlayer);
 
         private static float guardianDelay;
         public static void GuardianGun()
@@ -107,12 +159,16 @@ namespace iiMenu.Mods
         {
             if (NetworkSystem.Instance.IsMasterClient)
             {
-                int i = 0;
-                foreach (var gorillaGuardianZoneManager in GorillaGuardianZoneManager.zoneManagers.Where(gorillaGuardianZoneManager => gorillaGuardianZoneManager.enabled && gorillaGuardianZoneManager.IsZoneValid()))
-                {
-                    gorillaGuardianZoneManager.SetGuardian(PhotonNetwork.PlayerList[i]);
-                    i++;
-                }
+                List<GorillaGuardianZoneManager> zones = GuardianZones(false);
+                Player[] players = PhotonNetwork.PlayerList;
+
+                if (players.Length <= 0)
+                    return;
+
+                // There are usually more zones than players, so wrap instead of walking
+                // off the end of the player list and throwing.
+                for (int i = 0; i < zones.Count; i++)
+                    zones[i].SetGuardian(NetPlayer.Get(players[i % players.Length]));
             }
             else NotificationManager.SendNotification("<color=grey>[</color><color=red>ERROR</color><color=grey>]</color> You are not master client.");
         }
@@ -121,7 +177,7 @@ namespace iiMenu.Mods
         {
             if (NetworkSystem.Instance.IsMasterClient)
             {
-                foreach (var gorillaGuardianZoneManager in GorillaGuardianZoneManager.zoneManagers.Where(gorillaGuardianZoneManager => gorillaGuardianZoneManager.enabled && gorillaGuardianZoneManager.IsZoneValid()).Where(gorillaGuardianZoneManager => gorillaGuardianZoneManager.CurrentGuardian == NetworkSystem.Instance.LocalPlayer))
+                foreach (var gorillaGuardianZoneManager in GuardianZones(false).Where(gorillaGuardianZoneManager => gorillaGuardianZoneManager.CurrentGuardian == NetworkSystem.Instance.LocalPlayer))
                     gorillaGuardianZoneManager.SetGuardian(null);
             }
             else NotificationManager.SendNotification("<color=grey>[</color><color=red>ERROR</color><color=grey>]</color> You are not master client.");
@@ -141,7 +197,7 @@ namespace iiMenu.Mods
                     {
                         if (NetworkSystem.Instance.IsMasterClient)
                         {
-                            foreach (var gorillaGuardianZoneManager in GorillaGuardianZoneManager.zoneManagers.Where(gorillaGuardianZoneManager => gorillaGuardianZoneManager.enabled && gorillaGuardianZoneManager.IsZoneValid()).Where(gorillaGuardianZoneManager => gorillaGuardianZoneManager.CurrentGuardian == GetPlayerFromVRRig(gunTarget)))
+                            foreach (var gorillaGuardianZoneManager in GuardianZones(false).Where(gorillaGuardianZoneManager => gorillaGuardianZoneManager.CurrentGuardian == GetPlayerFromVRRig(gunTarget)))
                                 gorillaGuardianZoneManager.SetGuardian(null);
                         }
                         else NotificationManager.SendNotification("<color=grey>[</color><color=red>ERROR</color><color=grey>]</color> You are not master client.");
@@ -155,7 +211,7 @@ namespace iiMenu.Mods
         {
             if (NetworkSystem.Instance.IsMasterClient)
             {
-                foreach (var gorillaGuardianZoneManager in GorillaGuardianZoneManager.zoneManagers.Where(gorillaGuardianZoneManager => gorillaGuardianZoneManager.enabled && gorillaGuardianZoneManager.IsZoneValid()))
+                foreach (var gorillaGuardianZoneManager in GuardianZones(false))
                     gorillaGuardianZoneManager.SetGuardian(null);
             }
             else NotificationManager.SendNotification("<color=grey>[</color><color=red>ERROR</color><color=grey>]</color> You are not master client.");
@@ -294,7 +350,7 @@ namespace iiMenu.Mods
             state++;
             state %= 6;
 
-            if (GorillaGameManager.instance.GameType() == GameModeType.Casual)
+            if (GorillaGameManager.instance != null && GorillaGameManager.instance.GameType() == GameModeType.Casual)
             {
                 if (state < 4)
                     state = 4;
@@ -391,48 +447,130 @@ namespace iiMenu.Mods
         }
 
         public static float alwaysGuardianDelay;
+        private static bool alwaysGuardianSpoofingRig;
+
+        /// <summary>
+        /// Hands the rig back to the game, but only if Always Guardian is the one holding it,
+        /// so it can't fight other mods that legitimately have the rig disabled.
+        /// </summary>
+        private static void StopAlwaysGuardianSpoof()
+        {
+            if (!alwaysGuardianSpoofingRig)
+                return;
+
+            alwaysGuardianSpoofingRig = false;
+
+            if (VRRig.LocalRig != null)
+                VRRig.LocalRig.enabled = true;
+        }
+
+        /// <summary>
+        /// Toggle-off handler. Drops the rig spoof and gives the rig back to the game so the
+        /// mod is safe to turn on and off as many times as you like.
+        /// </summary>
+        public static void DisableAlwaysGuardian()
+        {
+            alwaysGuardianSpoofingRig = false;
+            alwaysGuardianDelay = 0f;
+
+            Movement.EnableRig();
+        }
+
+        private static float alwaysGuardianLogDelay;
+
+        /// <summary>
+        /// Throttled state dump for Always Guardian, so a failure in a live game can be read
+        /// back out of BepInEx/LogOutput.log instead of guessed at.
+        /// </summary>
+        private static void LogAlwaysGuardian(string state)
+        {
+            if (Time.time < alwaysGuardianLogDelay)
+                return;
+
+            alwaysGuardianLogDelay = Time.time + 5f;
+            LogManager.Log($"[AlwaysGuardian] {state} master={NetworkSystem.Instance.IsMasterClient} zones={GuardianZones().Count}");
+        }
+
         public static void AlwaysGuardian()
         {
-            if (PhotonNetwork.InRoom)
+            GorillaGuardianManager guardianManager = GuardianManager();
+            if (guardianManager == null || !guardianManager.isPlaying)
             {
-                if (GorillaGameManager.instance.GameType() != GameModeType.Guardian)
-                    return;
+                StopAlwaysGuardianSpoof();
+                LogAlwaysGuardian(guardianManager == null ? "not a guardian game" : "guardian game not started");
+                return;
+            }
 
-                if (NetworkSystem.Instance.IsMasterClient)
-                {
-                    if (!VRRig.LocalRig.enabled)
-                        VRRig.LocalRig.enabled = true;
-                    GorillaGuardianManager guardianManager = (GorillaGuardianManager)GorillaGameManager.instance;
-                    if (!guardianManager.IsPlayerGuardian(PhotonNetwork.LocalPlayer))
-                        SetGuardianTarget(PhotonNetwork.LocalPlayer);
-                }
-                else
-                {
-                    GorillaGuardianManager guardianManager = (GorillaGuardianManager)GorillaGameManager.instance;
-                    foreach (TappableGuardianIdol tgi in GetAllType<TappableGuardianIdol>())
-                    {
-                        if (tgi.manager && tgi.manager.photonView && !tgi.isChangingPositions)
-                        {
-                            GorillaGuardianZoneManager zoneManager = tgi.zoneManager;
-                            if (!guardianManager.IsPlayerGuardian(NetworkSystem.Instance.LocalPlayer) && zoneManager.IsZoneValid() && tgi.manager)
-                            {
-                                VRRig.LocalRig.enabled = false;
-                                VRRig.LocalRig.transform.position = tgi.transform.position + RandomVector3(0.1f);
-                                VRRig.LocalRig.leftHand.rigTarget.transform.position = tgi.transform.position;
-                                VRRig.LocalRig.rightHand.rigTarget.transform.position = tgi.transform.position;
+            NetPlayer localPlayer = NetworkSystem.Instance.LocalPlayer;
 
-                                if (Time.time > alwaysGuardianDelay)
-                                {
-                                    alwaysGuardianDelay = Time.time + (zoneManager._currentActivationTime >= zoneManager.requiredActivationTime - 1f ? 0f : 0.2f);
-                                    tgi.OnTap(Random.Range(0f, 1f));
-                                    RPCProtection();
-                                }
-                            }
-                        }
-                        else
-                            VRRig.LocalRig.enabled = true;
-                    }
+            if (NetworkSystem.Instance.IsMasterClient)
+            {
+                StopAlwaysGuardianSpoof();
+
+                // The master client is the authority on the guardian slot, so take it back
+                // every frame no matter who currently holds it or how many times it changes.
+                foreach (GorillaGuardianZoneManager zoneManager in GuardianZones())
+                {
+                    if (zoneManager.CurrentGuardian != localPlayer)
+                        zoneManager.SetGuardian(localPlayer);
                 }
+
+                LogAlwaysGuardian("holding slot as master");
+                return;
+            }
+
+            if (guardianManager.IsPlayerGuardian(localPlayer))
+            {
+                StopAlwaysGuardianSpoof();
+                LogAlwaysGuardian("already guardian");
+                return;
+            }
+
+            // As a non master client the only way in is tapping the idol, which the master
+            // validates against our replicated rig position. Pick a single idol instead of
+            // every idol in the scene, otherwise each map's idol overwrites the last one's
+            // teleport and re-enables the rig, and none of the taps ever land.
+            GorillaGuardianZoneManager targetZone = null;
+            TappableGuardianIdol targetIdol = null;
+
+            foreach (GorillaGuardianZoneManager zoneManager in GuardianZones())
+            {
+                TappableGuardianIdol idol = zoneManager.idol;
+                if (idol == null || !idol.gameObject.activeInHierarchy || idol.isChangingPositions || idol.manager == null)
+                    continue;
+
+                targetZone = zoneManager;
+                targetIdol = idol;
+                break;
+            }
+
+            if (targetIdol == null)
+            {
+                StopAlwaysGuardianSpoof();
+                LogAlwaysGuardian("waiting, no tappable idol");
+                return;
+            }
+
+            LogAlwaysGuardian($"tapping idol, progress={targetZone._currentActivationTime}/{targetZone.requiredActivationTime}");
+
+            Vector3 idolPosition = targetIdol.transform.position;
+
+            alwaysGuardianSpoofingRig = true;
+            VRRig.LocalRig.enabled = false;
+            VRRig.LocalRig.transform.position = idolPosition + RandomVector3(0.1f);
+            VRRig.LocalRig.leftHand.rigTarget.transform.position = idolPosition;
+            VRRig.LocalRig.rightHand.rigTarget.transform.position = idolPosition;
+
+            if (Time.time > alwaysGuardianDelay)
+            {
+                // The zone only banks a tap once activationTimePerTap has elapsed since the
+                // last one, so tapping faster than that is wasted RPCs. Spam the last tap
+                // though, so the idol flips the instant the bar fills.
+                bool finalTap = targetZone._currentActivationTime >= targetZone.requiredActivationTime - targetZone.activationTimePerTap;
+                alwaysGuardianDelay = Time.time + (finalTap ? 0f : Mathf.Max(0.1f, targetZone.activationTimePerTap * 0.25f));
+
+                targetIdol.OnTap(Random.Range(0f, 1f));
+                RPCProtection();
             }
         }
 
@@ -441,12 +579,11 @@ namespace iiMenu.Mods
         {
             if (PhotonNetwork.InRoom)
             {
-                GorillaGuardianManager manager = (GorillaGuardianManager)GorillaGameManager.instance;
-
-                if (!manager.IsPlayerGuardian(PhotonNetwork.LocalPlayer)) return;
-                foreach (TappableGuardianIdol tgi in GetAllType<TappableGuardianIdol>())
+                if (!IsLocalGuardian()) return;
+                foreach (GorillaGuardianZoneManager zoneManager in GuardianZones())
                 {
-                    if (!tgi.manager || !tgi.manager.photonView) continue;
+                    TappableGuardianIdol tgi = zoneManager.idol;
+                    if (tgi == null || !tgi.gameObject.activeInHierarchy) continue;
                     foreach (var rig in VRRigCache.AllRigs.Where(rig => !rig.isLocal && Vector3.Distance(rig.transform.position, tgi.transform.position) < 2f && Time.time > guardianProtectorDelay))
                     {
                         BetaSetVelocityPlayer(GetPlayerFromVRRig(rig), (rig.transform.position - tgi.transform.position).normalized * 50f);
@@ -3102,8 +3239,7 @@ namespace iiMenu.Mods
             if (velocity.sqrMagnitude > 20f)
                 velocity = Vector3.Normalize(velocity) * 20f;
 
-            GorillaGuardianManager gman = (GorillaGuardianManager)GorillaGameManager.instance;
-            if (gman.IsPlayerGuardian(NetworkSystem.Instance.LocalPlayer))
+            if (IsLocalGuardian())
             {
                 GetNetworkViewFromVRRig(GetVRRigFromPlayer(victim)).SendRPC("GrabbedByPlayer", victim, true, false, false);
                 GetNetworkViewFromVRRig(GetVRRigFromPlayer(victim)).SendRPC("DroppedByPlayer", victim, velocity);
@@ -3117,8 +3253,7 @@ namespace iiMenu.Mods
             if (velocity.sqrMagnitude > 20f)
                 velocity = Vector3.Normalize(velocity) * 20f;
 
-            GorillaGuardianManager gman = (GorillaGuardianManager)GorillaGameManager.instance;
-            if (gman.IsPlayerGuardian(NetworkSystem.Instance.LocalPlayer))
+            if (IsLocalGuardian())
             {
                 switch (victim)
                 {
@@ -3166,8 +3301,7 @@ namespace iiMenu.Mods
                     VRRig gunTarget = Ray.collider.GetComponentInParent<VRRig>();
                     if (gunTarget && !gunTarget.IsLocal())
                     {
-                        GorillaGuardianManager gman = (GorillaGuardianManager)GorillaGameManager.instance;
-                        if (gman.IsPlayerGuardian(NetworkSystem.Instance.LocalPlayer))
+                        if (IsLocalGuardian())
                         {
                             GetNetworkViewFromVRRig(gunTarget).SendRPC("GrabbedByPlayer", RpcTarget.Others, true, false, false);
                             RPCProtection();
@@ -3185,8 +3319,7 @@ namespace iiMenu.Mods
             if (rightGrab && Time.time > grabDelay)
             {
                 grabDelay = Time.time + 0.1f;
-                GorillaGuardianManager guardianManager = (GorillaGuardianManager)GorillaGameManager.instance;
-                if (guardianManager.IsPlayerGuardian(NetworkSystem.Instance.LocalPlayer))
+                if (IsLocalGuardian())
                 {
                     foreach (var plr in VRRigCache.AllRigs.Where(plr => !plr.isLocal))
                     {
@@ -3212,8 +3345,7 @@ namespace iiMenu.Mods
                     VRRig gunTarget = Ray.collider.GetComponentInParent<VRRig>();
                     if (gunTarget && !gunTarget.IsLocal())
                     {
-                        GorillaGuardianManager gman = (GorillaGuardianManager)GorillaGameManager.instance;
-                        if (gman.IsPlayerGuardian(NetworkSystem.Instance.LocalPlayer))
+                        if (IsLocalGuardian())
                         {
                             GetNetworkViewFromVRRig(gunTarget).SendRPC("DroppedByPlayer", RpcTarget.Others, new Vector3(0f, 0f, 0f));
                             RPCProtection();
@@ -3232,8 +3364,7 @@ namespace iiMenu.Mods
             if (rightTrigger > 0.5f && Time.time > releaseDelay)
             {
                 releaseDelay = Time.time + 0.1f;
-                GorillaGuardianManager guardianManager = (GorillaGuardianManager)GorillaGameManager.instance;
-                if (guardianManager.IsPlayerGuardian(NetworkSystem.Instance.LocalPlayer))
+                if (IsLocalGuardian())
                 {
                     foreach (var plr in VRRigCache.AllRigs.Where(plr => !plr.isLocal))
                     {
@@ -5057,7 +5188,10 @@ namespace iiMenu.Mods
         {
             boxingDelay.Remove(rig);
 
-            boxingDelay.Add(rig, SnowballSpawnDelay);
+            // This is compared against Time.time, so it has to be a timestamp. Storing the
+            // bare duration meant the cooldown expired a fraction of a second into the
+            // session and every contact fired a fling on every single frame after that.
+            boxingDelay.Add(rig, Time.time + SnowballSpawnDelay);
         }
 
         public static void Boxing()
@@ -5144,8 +5278,7 @@ namespace iiMenu.Mods
             {
                 if (Time.time > slamDel)
                 {
-                    GorillaGuardianManager gman = (GorillaGuardianManager)GorillaGameManager.instance;
-                    if (gman.IsPlayerGuardian(NetworkSystem.Instance.LocalPlayer))
+                    if (IsLocalGuardian())
                     {
                         GameMode.ActiveNetworkHandler.NetView.GetView.RPC(flip ? "ShowSlamEffect" : "ShowSlapEffects", RpcTarget.All, GorillaTagger.Instance.rightHandTransform.position, new Vector3(Random.Range(0, 360), Random.Range(0, 360), Random.Range(0, 360)));
                         RPCProtection();
@@ -5161,8 +5294,7 @@ namespace iiMenu.Mods
             {
                 if (Time.time > slamDel)
                 {
-                    GorillaGuardianManager gman = (GorillaGuardianManager)GorillaGameManager.instance;
-                    if (gman.IsPlayerGuardian(NetworkSystem.Instance.LocalPlayer))
+                    if (IsLocalGuardian())
                     {
                         GameMode.ActiveNetworkHandler.NetView.GetView.RPC(flip ? "ShowSlamEffect" : "ShowSlapEffects", RpcTarget.All, GorillaTagger.Instance.leftHandTransform.position, new Vector3(Random.Range(0, 360), Random.Range(0, 360), Random.Range(0, 360)));
                         RPCProtection();
@@ -5185,10 +5317,9 @@ namespace iiMenu.Mods
 
                 if (GetGunInput(true))
                 {
-                    GorillaGuardianManager gman = (GorillaGuardianManager)GorillaGameManager.instance;
                     if (Time.time > slamDel)
                     {
-                        if (gman.IsPlayerGuardian(NetworkSystem.Instance.LocalPlayer))
+                        if (IsLocalGuardian())
                         {
                             GameMode.ActiveNetworkHandler.NetView.GetView.RPC(flip ? "ShowSlamEffect" : "ShowSlapEffects", RpcTarget.All, NewPointer.transform.position, new Vector3(Random.Range(0, 360), Random.Range(0, 360), Random.Range(0, 360)));
                             RPCProtection();
@@ -5388,9 +5519,18 @@ namespace iiMenu.Mods
             ZaWarudo_EndCoroutineVariable = null;
         }
 
+        // Power tables. There are five tiers; lagIndex must stay in [0, lagPowerCount).
+        private static readonly int[] lagAmounts = { 40, 113, 425, 1000, 3800 };
+        private static readonly float[] lagDelays = { 0.1f, 0.25f, 1f, 3f, 8f };
+        private static readonly string[] lagPowerNames = { "Light", "Heavy", "Spike", "Stutter", "Freeze" };
+        private static readonly int lagPowerCount = lagAmounts.Length;
+
         public static int lagIndex = 1;
-        public static int lagAmount;
-        public static float lagDelay;
+        // Initialized to match the default lagIndex (Heavy). These used to default to 0, which made
+        // every lag loop "for (i = 0; i < lagAmount; i++)" run zero times, so the lag gun sent
+        // nothing at all unless the player had a saved config that happened to call ChangeLagPower.
+        public static int lagAmount = lagAmounts[1];
+        public static float lagDelay = lagDelays[1];
         public static void ChangeLagPower(bool positive = true)
         {
             if (positive)
@@ -5398,14 +5538,16 @@ namespace iiMenu.Mods
             else
                 lagIndex--;
 
-            lagIndex %= 3;
+            // Was "% 3", which locked out the two strongest tiers (Stutter and Freeze) even though
+            // the tables define them -- so the hardest reachable setting was Spike (425).
+            lagIndex %= lagPowerCount;
             if (lagIndex < 0)
-                lagIndex = 2;
+                lagIndex = lagPowerCount - 1;
 
-            lagAmount = new[] { 40, 113, 425, 1000, 3800 }[lagIndex];
-            lagDelay = new[] { 0.1f, 0.25f, 1f, 3f, 8f }[lagIndex];
+            lagAmount = lagAmounts[lagIndex];
+            lagDelay = lagDelays[lagIndex];
 
-            Buttons.GetIndex("Change Lag Power").overlapText = "Change Lag Power <color=grey>[</color><color=green>" + new[] { "Light", "Heavy", "Spike", "Stutter", "Freeze" }[lagIndex] + "</color><color=grey>]</color>";
+            Buttons.GetIndex("Change Lag Power").overlapText = "Change Lag Power <color=grey>[</color><color=green>" + lagPowerNames[lagIndex] + "</color><color=grey>]</color>";
         }
 
         public static int lagTypeIndex;
@@ -5440,6 +5582,100 @@ namespace iiMenu.Mods
         }
 
         private static float lagDebounce;
+
+        // How many times harder the lag mods hit. The lag works by flooding the target with network
+        // events; this multiplies how many get sent per trigger. 100 => ~100x the volume of the
+        // selected power tier -- enough to freeze a target's game for seconds at a time.
+        public static int lagMultiplier = 100;
+
+        // Sustained (default): lag is fed as a steady per-frame stream, so the target's framerate
+        // stays chronically low the whole time you hold the line on them. Bursty (off): the full
+        // 100x flood is dumped per cooldown, giving multi-second freeze spikes instead.
+        public static bool lagSustained = true;
+
+        // The flood is delivered a chunk-per-frame instead of all at once. Sending, say,
+        // 3800 * 100 = 380,000 events in one synchronous loop would hang the SENDER's game just as
+        // hard as the target's. Spreading it across frames keeps you playable while the target still
+        // gets buried. Lower LagSendsPerFrame if you feel it on your end; raise it to hit harder.
+        private const int LagSendsPerFrame = 2500;      // max events drained per frame -> the freeze-spike rate
+        private const int LagSustainedPerCall = 700;    // steady baseline enqueued each frame -> constant heavy lag
+        private const int LagSpikeSize = 300000;        // extra flood injected on a spike -> multi-second freeze
+        private const int MaxPendingLagSends = 400000;
+
+        private static float nextLagSpike;
+
+        // Events to enqueue per trigger call. The guns call their lag method every frame while the
+        // line is locked on a target. Burst mode dumps the whole 100x flood each cooldown. Sustained
+        // streams a heavy baseline continuously (constant bad lag) AND, at random 3-7s intervals,
+        // injects a giant spike so the target ALSO gets sudden multi-second freezes on top -- the
+        // pump still drains at a fixed rate per frame, so your own client stays alive.
+        public static int LagCountPerTrigger()
+        {
+            if (!lagSustained)
+                return lagAmount * Mathf.Max(1, lagMultiplier);
+
+            int count = LagSustainedPerCall;
+
+            if (Time.time >= nextLagSpike)
+            {
+                nextLagSpike = Time.time + UnityEngine.Random.Range(3f, 7f);
+                count += LagSpikeSize;
+            }
+
+            return count;
+        }
+
+        private class LagBatch { public Action Send; public int Remaining; }
+        private static readonly List<LagBatch> lagBatches = new List<LagBatch>();
+        private static bool lagPumpRunning;
+
+        public static void EnqueueLag(Action send, int count)
+        {
+            if (send == null || count <= 0)
+                return;
+
+            // Drop new floods when the backlog is already huge, so holding the trigger can't grow
+            // the queue without bound and choke your own client.
+            int pending = 0;
+            foreach (LagBatch existing in lagBatches)
+                pending += existing.Remaining;
+            if (pending >= MaxPendingLagSends)
+                return;
+
+            lagBatches.Add(new LagBatch { Send = send, Remaining = count });
+
+            if (!lagPumpRunning && CoroutineManager.instance != null)
+                CoroutineManager.instance.StartCoroutine(LagPump());
+        }
+
+        private static IEnumerator LagPump()
+        {
+            lagPumpRunning = true;
+            while (lagBatches.Count > 0)
+            {
+                int budget = LagSendsPerFrame;
+                for (int b = lagBatches.Count - 1; b >= 0 && budget > 0; b--)
+                {
+                    LagBatch batch = lagBatches[b];
+                    int send = Mathf.Min(batch.Remaining, budget);
+                    for (int i = 0; i < send; i++)
+                    {
+                        try { batch.Send(); }
+                        catch { }
+                    }
+                    batch.Remaining -= send;
+                    budget -= send;
+                    if (batch.Remaining <= 0)
+                        lagBatches.RemoveAt(b);
+                }
+
+                // Keep Photon's limits maxed and flush this frame's flood so it actually leaves.
+                RPCProtection();
+                yield return null;
+            }
+            lagPumpRunning = false;
+        }
+
         public static void LagTarget(object target)
         {
             if (!PhotonNetwork.InRoom) return;
@@ -5453,7 +5689,11 @@ namespace iiMenu.Mods
             if (target is NetPlayer legacyNetPlayerTarget)
                 target = legacyNetPlayerTarget.GetPlayer();
 
-            lagDebounce = Time.time + lagDelay;
+            // Sustained: no cooldown, so this runs every frame the gun calls it and the pump gets a
+            // steady feed. Bursty: wait lagDelay between floods.
+            lagDebounce = lagSustained ? Time.time : Time.time + lagDelay;
+
+            int total = LagCountPerTrigger();
 
             if (IsLagMethodRPC())
             {
@@ -5474,22 +5714,16 @@ namespace iiMenu.Mods
                 switch (target)
                 {
                     case RpcTarget rpcTarget:
-                        for (int i = 0; i < lagAmount; i++)
-                            view.RPC(rpcName, rpcTarget, data);
-
+                        EnqueueLag(() => view.RPC(rpcName, rpcTarget, data), total);
                         break;
                     case Player player:
-                        for (int i = 0; i < lagAmount; i++)
-                            view.RPC(rpcName, player, data);
-
+                        EnqueueLag(() => view.RPC(rpcName, player, data), total);
                         break;
                     case int[] actorNumbers:
                         if (actorNumbers.Length == 0)
                             break;
 
-                        for (int i = 0; i < lagAmount; i++)
-                            SpecialTargetRPC(view, rpcName, new RaiseEventOptions { TargetActors = actorNumbers }, data);
-
+                        EnqueueLag(() => SpecialTargetRPC(view, rpcName, new RaiseEventOptions { TargetActors = actorNumbers }, data), total);
                         break;
                 }
             } else
@@ -5514,7 +5748,7 @@ namespace iiMenu.Mods
                     _ => new object[] { float.NaN }
                 };
 
-                RaiseEventOptions raiseEventOptions = lagTypeIndex switch 
+                RaiseEventOptions raiseEventOptions = lagTypeIndex switch
                 {
                     _ => new RaiseEventOptions { CachingOption = EventCaching.DoNotCache }
                 };
@@ -5532,13 +5766,13 @@ namespace iiMenu.Mods
                         break;
                 }
 
-                for (int i = 0; i < lagAmount; i++)
+                EnqueueLag(() =>
                 {
                     if (isOp)
                         PhotonNetwork.NetworkingClient.OpRaiseEvent(eventIndex, data, raiseEventOptions, sendOptions);
                     else
                         PhotonNetwork.RaiseEvent(eventIndex, data, raiseEventOptions, sendOptions);
-                }
+                }, total);
             }
 
             RPCProtection();

@@ -874,20 +874,16 @@ exit";
             LoudnessPatch.enabled = false;
         }
 
-        private static float lastTime;
         public static void CapFPS(int fps)
         {
-            float targetDelta = 1f / fps;
-            float elapsed = Time.realtimeSinceStartup - lastTime;
-
-            if (elapsed < targetDelta)
-            {
-                int sleepMs = Mathf.FloorToInt((targetDelta - elapsed) * 1000);
-                if (sleepMs > 0)
-                    Thread.Sleep(sleepMs);
-            }
-
-            lastTime = Time.realtimeSinceStartup;
+            // This used to throttle with Thread.Sleep on the main thread. The FPS buttons are
+            // togglable, so CapFPS runs every frame -- at 15 FPS that slept ~66ms on the main/render
+            // thread each frame, which the VR compositor (and Windows) treat as the app hanging, so
+            // the game crashed. Application.targetFrameRate caps the framerate without ever blocking
+            // the thread, so it can't trip that watchdog. (In VR the headset's refresh rate may floor
+            // how low this actually goes, but it will no longer crash.)
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = fps;
         }
 
         public static void UncapFPS()
@@ -895,6 +891,36 @@ exit";
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = int.MaxValue;
         }
+
+        public static void ReloadGameAudio()
+        {
+            // The giveaway "gorilla mouths move but I hear nothing" means the game IS producing audio
+            // (voice data drives the mouth flaps), so the sound is being silenced at the master
+            // output -- either the global AudioListener volume is 0 / paused, or audio is bound to a
+            // device you aren't listening on (common over Steam Link). Fix all three: un-pause,
+            // restore master volume, and re-acquire the current audio device.
+            AudioListener.pause = false;
+            AudioListener.volume = 1f;
+            AudioSettings.Reset(AudioSettings.GetConfiguration());
+            NotificationManager.SendNotification("<color=grey>[</color><color=green>AUDIO</color><color=grey>]</color> Restored game audio (volume + device).");
+        }
+
+        public static IEnumerator AutoRestoreGameAudio()
+        {
+            // Apply the same fix automatically a few seconds after launch (once SteamVR/Steam Link
+            // has settled), so audio comes back without you finding the button. One-shot, so it does
+            // not fight the game during normal play.
+            yield return new WaitForSeconds(3f);
+
+            try
+            {
+                AudioListener.pause = false;
+                AudioListener.volume = 1f;
+                AudioSettings.Reset(AudioSettings.GetConfiguration());
+            }
+            catch { }
+        }
+
 
         private static Vector3? oldLocalPosition;
         public static void PCButtonClick()

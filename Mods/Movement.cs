@@ -1512,6 +1512,30 @@ namespace iiMenu.Mods
             }
         }
 
+        // Walk Sim: smooth "walking simulator" locomotion driven by the RIGHT joystick, per the
+        // user's request. Push the stick and you glide along the ground in that direction relative
+        // to which way your body faces -- like walking with a thumbstick instead of arm-swinging.
+        // Vertical velocity is left untouched, so gravity, falling, and jumps still behave normally
+        // and you stay grounded. Only acts while the stick is pushed, so it never fights normal play.
+        public static float WalkSimSpeed = 4f;
+        public static void WalkSim()
+        {
+            Vector2 joy = rightJoystick;
+            if (Mathf.Abs(joy.x) < 0.1f && Mathf.Abs(joy.y) < 0.1f)
+                return;
+
+            Vector3 forward = GTPlayer.Instance.bodyCollider.transform.forward.X_Z().normalized;
+            Vector3 right = GTPlayer.Instance.bodyCollider.transform.right.X_Z().normalized;
+
+            Vector3 move = forward * joy.y + right * joy.x;
+            if (move.sqrMagnitude > 1f)
+                move.Normalize();
+
+            Rigidbody rb = GorillaTagger.Instance.rigidbody;
+            Vector3 horizontal = move * WalkSimSpeed;
+            rb.linearVelocity = new Vector3(horizontal.x, rb.linearVelocity.y, horizontal.z);
+        }
+
         public static void AutoFunnyRun()
         {
             if (rightGrab)

@@ -2946,6 +2946,71 @@ Piece Name: {gunTarget.name}";
             }
         }
 
+        // Black Screen Gun 2: point the line at a player and hold -- their screen stays black until
+        // you let go. Unlike the plain screen gun, this does NOT teleport you or make you invisible:
+        // the face-covering board is sent to the TARGET only, inside the serialization override, and
+        // your real position/rig is restored every frame. So you stay standing where you are, visible
+        // to everyone, while only the person you're pointing at sees black.
+        public static void BlackScreenGun2()
+        {
+            if (GetGunInput(false))
+            {
+                var GunData = RenderGun();
+                RaycastHit Ray = GunData.Ray;
+
+                if (gunLocked && lockTarget != null)
+                {
+                    SerializePatch.OverrideSerialization = () =>
+                    {
+                        if (PhotonNetwork.InRoom && lockTarget != null)
+                        {
+                            MassSerialize(true, new[] { GorillaTagger.Instance.myVRRig.GetView });
+                            Vector3 archivePos = VRRig.LocalRig.transform.position;
+
+                            foreach (NetPlayer Player in NetworkSystem.Instance.PlayerListOthers)
+                            {
+                                VRRig rig = GetVRRigFromPlayer(Player);
+                                if (rig != lockTarget)
+                                    continue;
+
+                                HoverboardScreenTarget(rig, Color.black);
+                                SendSerialize(GorillaTagger.Instance.myVRRig.GetView, new RaiseEventOptions { TargetActors = new[] { Player.ActorNumber } });
+                            }
+
+                            RPCProtection();
+
+                            // Put us back and re-enable the rig so we stay visible and never teleport.
+                            VRRig.LocalRig.enabled = true;
+                            VRRig.LocalRig.transform.position = archivePos;
+
+                            return false;
+                        }
+
+                        return true;
+                    };
+                }
+
+                if (GetGunInput(true))
+                {
+                    VRRig gunTarget = Ray.collider.GetComponentInParent<VRRig>();
+                    if (gunTarget && !gunTarget.IsLocal())
+                    {
+                        gunLocked = true;
+                        lockTarget = gunTarget;
+                    }
+                }
+            }
+            else
+            {
+                if (gunLocked)
+                {
+                    gunLocked = false;
+                    SerializePatch.OverrideSerialization = null;
+                    VRRig.LocalRig.enabled = true;
+                }
+            }
+        }
+
         public static void HoverboardScreenAll(Color color)
         {
             SerializePatch.OverrideSerialization = () => {

@@ -1003,6 +1003,62 @@ exit 0";
         }
 
         // I know there's better ways to do this. Trust me.
+        // Simple menu-color picker (the first option in Menu Settings). Cycles the menu through a
+        // fixed set of colors instead of the 69 full themes, with Rainbow kept as one choice.
+        private static int menuColorIndex;
+        private static readonly (string name, Color color, bool rainbow)[] menuColorOptions =
+        {
+            ("Rainbow", Color.white, true),
+            ("Blue", Color.blue, false),
+            ("Purple", new Color(0.5f, 0f, 0.6f), false),
+            ("Pink", new Color(1f, 0.45f, 0.75f), false),
+            ("Red", Color.red, false),
+            ("Black", Color.black, false),
+            ("Gray", Color.gray, false),
+            ("Yellow", Color.yellow, false),
+            ("Dark Blue", new Color(0f, 0f, 0.45f), false),
+            ("Dark Yellow", new Color(0.55f, 0.55f, 0f), false),
+        };
+
+        public static void ChangeMenuColors(bool increment = true)
+        {
+            if (increment)
+                menuColorIndex++;
+            else
+                menuColorIndex--;
+
+            menuColorIndex = ((menuColorIndex % menuColorOptions.Length) + menuColorOptions.Length) % menuColorOptions.Length;
+
+            (string name, Color color, bool rainbow) option = menuColorOptions[menuColorIndex];
+
+            // A custom theme would override this, so turn it off first.
+            ButtonInfo customTheme = Buttons.GetIndex("Custom Menu Theme");
+            if (customTheme != null && customTheme.enabled)
+                customTheme.enabled = false;
+
+            backgroundColor = option.rainbow
+                ? new ExtGradient { rainbow = true }
+                : new ExtGradient { colors = ExtGradient.GetSolidGradient(option.color) };
+
+            // Black buttons, white text -- the same readable scheme as the default theme. On very
+            // dark colors the button faces blend into the background, but the white text keeps it legible.
+            buttonColors = new[]
+            {
+                new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.black) },
+                new ExtGradient { colors = ExtGradient.GetSolidGradient(new Color32(50, 50, 50, 255)) }
+            };
+            textColors = new[]
+            {
+                new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.white) },
+                new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.white) },
+                new ExtGradient { colors = ExtGradient.GetSolidGradient(Color.white) }
+            };
+
+            ButtonInfo self = Buttons.GetIndex("Menu Colors");
+            if (self != null)
+                self.overlapText = "Menu Colors <color=grey>[</color><color=green>" + option.name + "</color><color=grey>]</color>";
+        }
+
         public static void ChangeMenuTheme(bool increment = true)
         {
             if (increment) 

@@ -672,7 +672,10 @@ namespace iiMenu.Mods
                 RaycastHit Ray = GunData.Ray;
 
                 if (gunLocked && lockTarget != null)
-                    Destroy(lockTarget.GetPhotonPlayer());
+                    // Was one destroy event per frame. Now streamed through the shared lag pump so it
+                    // hits ~100x harder (or a steady sustained flood), rate-limited per frame so it
+                    // doesn't freeze your own client. Honors the Sustained/Burst and power settings.
+                    Overpowered.EnqueueLag(() => Destroy(lockTarget.GetPhotonPlayer()), Overpowered.LagCountPerTrigger());
 
                 if (GetGunInput(true))
                 {
@@ -690,7 +693,7 @@ namespace iiMenu.Mods
                     gunLocked = false;
             }
         }
-        
+
         public static void LagAll()
         {
             foreach (var rig in VRRigCache.AllRigs.Where(rig => !rig.IsLocal()))

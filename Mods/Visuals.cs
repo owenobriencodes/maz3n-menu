@@ -3100,13 +3100,23 @@ namespace iiMenu.Mods
             {
                 if (_leavesName == null)
                 {
-                    var matchingObjects = GetObject("Environment Objects/LocalObjects_Prefab/Forest")
+                    GameObject forest = GetObject("Environment Objects/LocalObjects_Prefab/Forest");
+                    if (forest == null)
+                        return "UnityTempFile";
+
+                    var matchingObjects = forest
                         .GetComponentsInChildren<Transform>(true)
                         .Where(t => t.name.StartsWith("UnityTempFile"))
                         .GroupBy(t => t.name)
                         .FirstOrDefault(g => g.Count() == 3);
 
-                    _leavesName = matchingObjects?.Key ?? "UnityTempFile";
+                    // Only cache a real match. Caching the fallback would be permanent for the
+                    // session, and CustomBoardManager relies on this name to avoid mistaking a
+                    // leaf batch for the leaderboard.
+                    if (matchingObjects == null)
+                        return "UnityTempFile";
+
+                    _leavesName = matchingObjects.Key;
                 }
 
                 return _leavesName;
@@ -3192,14 +3202,20 @@ namespace iiMenu.Mods
             leaves.Clear();
         }
 
-        // Client-side leaf recolor. On build 24645815 some forest leaf cards render
-        // the wrong colour on PC GPUs without hardware ASTC support (the texture
-        // decompress fails), so a subset of leaves shows a flat placeholder tint while
-        // the rest stay green. This forces every leaf renderer to one natural green so
-        // they all match again. Purely local -- it only touches this client's copy of
-        // the forest, nothing networked. Reversible via the disable method.
-        public static readonly Color LeafGreen = new Color(0.298f, 0.541f, 0.204f);
-        public static readonly Dictionary<Renderer, Color> leafColorArchive = new Dictionary<Renderer, Color>();
+        // Repairs forest leaf batches that got repainted with the menu theme. The cause was
+        // CustomBoardManager claiming the forest leaderboard by a hardcoded index into Forest's
+        // batched "UnityTempFile" children; when that index landed on a leaf batch, the board
+        // material -- which is rewritten with backgroundColor every frame -- became the leaves'
+        // material, so they tracked the menu colour. CustomBoardManager.ResolveForestBoard now
+        // excludes leaf batches, so this is a repair path for sessions already in that state
+        // rather than the primary fix.
+        //
+        // No colour is hardcoded here on purpose: Forest leaves are seasonal (green normally,
+        // pink cherry blossom in spring, sometimes bare), so the only correct target is the
+        // material the game itself is using on the leaf batches that were left alone. Broken
+        // batches are given that exact material, which makes all of them match. Purely local --
+        // nothing networked. Reversible via the disable method.
+        public static readonly Dictionary<Renderer, Material> leafMaterialArchive = new Dictionary<Renderer, Material>();
 
         private static IEnumerable<GameObject> GetLeafObjects()
         {
@@ -3224,30 +3240,60 @@ namespace iiMenu.Mods
 
         public static void EnableFixLeafColor()
         {
-            foreach (GameObject leaf in GetLeafObjects())
+            List<Renderer> leafRenderers = GetLeafObjects()
+                .SelectMany(leaf => leaf.GetComponentsInChildren<Renderer>(true))
+                .Where(renderer => renderer != null && renderer.sharedMaterial != null)
+                .ToList();
+
+            if (leafRenderers.Count == 0)
+                return;
+
+            Material boardMaterial = CustomBoardManager.BoardMaterial;
+
+            // A leaf batch is "hijacked" if it is drawing with the board material. Everything else
+            // is still on the game's own leaf material and is the reference for what correct
+            // looks like this season.
+            List<Renderer> hijacked = leafRenderers
+                .Where(renderer => renderer.sharedMaterial == boardMaterial)
+                .ToList();
+
+            Material reference = leafRenderers
+                .Where(renderer => renderer.sharedMaterial != boardMaterial)
+                .GroupBy(renderer => renderer.sharedMaterial)
+                .OrderByDescending(group => group.Count())
+                .FirstOrDefault()?.Key
+                ?? CustomBoardManager.instance?.forestMaterial;
+
+            if (reference == null)
             {
-                foreach (Renderer renderer in leaf.GetComponentsInChildren<Renderer>(true))
-                {
-                    if (renderer == null)
-                        continue;
+                NotificationManager.SendNotification("<color=grey>[</color><color=red>ERROR</color><color=grey>]</color> Could not find an untouched leaf batch to copy the real leaf colour from.");
+                return;
+            }
 
-                    if (!leafColorArchive.ContainsKey(renderer))
-                        leafColorArchive[renderer] = renderer.material.color;
+            // If nothing is on the board material the leaves are already consistent, but a stale
+            // tint can still be baked into a material instance, so fall back to normalising every
+            // batch onto the reference material.
+            foreach (Renderer renderer in hijacked.Count > 0 ? hijacked : leafRenderers)
+            {
+                if (renderer.sharedMaterial == reference)
+                    continue;
 
-                    renderer.material.color = LeafGreen;
-                }
+                if (!leafMaterialArchive.ContainsKey(renderer))
+                    leafMaterialArchive[renderer] = renderer.sharedMaterial;
+
+                renderer.material = reference;
             }
         }
 
         public static void DisableFixLeafColor()
         {
-            foreach (KeyValuePair<Renderer, Color> pair in leafColorArchive)
+            foreach (KeyValuePair<Renderer, Material> pair in leafMaterialArchive)
             {
-                if (pair.Key != null)
-                    pair.Key.material.color = pair.Value;
+                if (pair.Key != null && pair.Value != null)
+                    pair.Key.material = pair.Value;
             }
 
-            leafColorArchive.Clear();
+            leafMaterialArchive.Clear();
         }
 
         // Overrides the tree-room Code of Conduct sign with custom red text. This edits
